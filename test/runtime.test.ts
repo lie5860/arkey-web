@@ -6,7 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { AckStatus, AgentState, ControlEventKind, decodeBindingMask, decodeSetKeyEffects, EffectPrimitive, encodeAck, Opcode } from "../src/protocol.js";
 import { q6ProAnsi } from "../src/profile.js";
-import { ArkeyDaemon, mergeStates } from "../src/runtime.js";
+import { ArkeyDaemon, defaultQ6Bindings, mergeStates } from "../src/runtime.js";
 
 test("active agents outrank completion while errors remain visible", () => {
   assert.equal(mergeStates([AgentState.Complete, AgentState.Thinking]), AgentState.Thinking);
@@ -115,6 +115,87 @@ class FakeAppServer extends EventEmitter {
   reasoningEfforts() { return ["low", "medium", "high"]; }
   defaultEffort() { return "medium"; }
 }
+
+test("fresh runtime seeds the original numpad-first Q6 layout with local task IDs", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "arkey-default-layout-"));
+  const daemon = new ArkeyDaemon(new V2Transport() as never, {
+    runtimeDirectory: directory,
+    appServer: new FakeAppServer() as never,
+    now: () => new Date("2026-07-17T00:00:00.000Z"),
+  });
+  try {
+    await daemon.start();
+    const stored = JSON.parse(readFileSync(join(directory, "bindings-v1.json"), "utf8")) as {
+      revision: number;
+      bindings: Array<{ controlId: string; instanceId: string; actionId: string; taskId?: string }>;
+    };
+    const tasks = JSON.parse(readFileSync(join(directory, "appserver-tasks-v1.json"), "utf8")) as {
+      tasks: Array<{ taskId: string; slotIndex: number }>;
+    };
+    assert.equal(stored.revision, 1);
+    assert.deepEqual(
+      stored.bindings.map(({ controlId, instanceId, actionId }) => ({ controlId, instanceId, actionId })),
+      defaultQ6Bindings.map(({ controlId, instanceId, actionId }) => ({ controlId, instanceId, actionId })),
+    );
+    assert.equal(stored.bindings.length, 15);
+    for (let slotIndex = 0; slotIndex < 6; slotIndex += 1) {
+      const task = tasks.tasks.find((candidate) => candidate.slotIndex === slotIndex);
+      const binding = stored.bindings.find((candidate) => candidate.instanceId === `task-agent-${slotIndex + 1}`);
+      assert.equal(binding?.taskId, task?.taskId, `Agent ${slotIndex + 1} must use the fresh runtime task ID`);
+    }
+  } finally {
+    await daemon.stop();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("runtime preserves an initialized custom binding store", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "arkey-existing-layout-"));
+  const existing = {
+    version: 1,
+    revision: 7,
+    bindings: [{
+      controlId: "r1c1",
+      instanceId: "custom-send",
+      actionId: "send",
+      profileId: q6ProAnsi.profileId,
+      layoutHash: q6ProAnsi.layoutHash,
+      createdAt: "2026-07-16T00:00:00.000Z",
+      updatedAt: "2026-07-16T00:00:00.000Z",
+    }],
+  };
+  writeFileSync(join(directory, "bindings-v1.json"), `${JSON.stringify(existing)}\n`, { mode: 0o600 });
+  const daemon = new ArkeyDaemon(new V2Transport() as never, {
+    runtimeDirectory: directory,
+    appServer: new FakeAppServer() as never,
+  });
+  try {
+    await daemon.start();
+    const stored = JSON.parse(readFileSync(join(directory, "bindings-v1.json"), "utf8"));
+    assert.deepEqual(stored, existing);
+  } finally {
+    await daemon.stop();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("runtime preserves a user-cleared binding store", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "arkey-cleared-layout-"));
+  const cleared = { version: 1, revision: 8, bindings: [] };
+  writeFileSync(join(directory, "bindings-v1.json"), `${JSON.stringify(cleared)}\n`, { mode: 0o600 });
+  const daemon = new ArkeyDaemon(new V2Transport() as never, {
+    runtimeDirectory: directory,
+    appServer: new FakeAppServer() as never,
+  });
+  try {
+    await daemon.start();
+    const stored = JSON.parse(readFileSync(join(directory, "bindings-v1.json"), "utf8"));
+    assert.deepEqual(stored, cleared);
+  } finally {
+    await daemon.stop();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 test("v2 knob binding covers rotation plus canonical matrix press, including short and long press", async () => {
   const directory = mkdtempSync(join(tmpdir(), "arkey-runtime-"));

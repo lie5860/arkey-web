@@ -273,15 +273,22 @@ struct ContentView: View {
                 .frame(height: 1)
 
             VStack(spacing: 12) {
-                if let restriction = store.restrictionMessage {
-                    restrictionCard(restriction)
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                if store.isCodexMicroLab {
+                    CodexMicroLabConfiguratorView(store: store)
+                    keyboardWorkspace
+                        .frame(maxHeight: .infinity, alignment: .top)
+                        .layoutPriority(1)
+                } else {
+                    if let restriction = store.restrictionMessage {
+                        restrictionCard(restriction)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    keyboardWorkspace
+                        .frame(maxHeight: .infinity)
+                        .layoutPriority(1)
+                    LiquidDockStackView(store: store)
+                    composer
                 }
-                keyboardWorkspace
-                    .frame(maxHeight: .infinity)
-                    .layoutPriority(1)
-                LiquidDockStackView(store: store)
-                composer
             }
             .padding(.horizontal, 18)
             .padding(.top, 14)
@@ -293,32 +300,34 @@ struct ContentView: View {
 
     private var keyboardWorkspace: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                Image(systemName: "keyboard")
-                    .foregroundStyle(ArkeyTheme.textTertiary)
-                if let action = store.selectedAction {
-                    Label(action.title, systemImage: action.kind.symbol)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(ArkeyTheme.textSecondary)
-                        .padding(.horizontal, 8)
-                        .frame(height: 24)
-                        .background(ArkeyTheme.surfaceHover, in: Capsule())
+            if !store.isCodexMicroLab {
+                HStack(spacing: 8) {
+                    Image(systemName: "keyboard")
+                        .foregroundStyle(ArkeyTheme.textTertiary)
+                    if let action = store.selectedAction {
+                        Label(action.title, systemImage: action.kind.symbol)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(ArkeyTheme.textSecondary)
+                            .padding(.horizontal, 8)
+                            .frame(height: 24)
+                            .background(ArkeyTheme.surfaceHover, in: Capsule())
+                    }
+                    Spacer()
                 }
-                Spacer()
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 36)
+                .padding(.horizontal, 12)
+                .frame(height: 36)
 
-            Rectangle()
-                .fill(ArkeyTheme.stroke)
-                .frame(height: 1)
+                Rectangle()
+                    .fill(ArkeyTheme.stroke)
+                    .frame(height: 1)
+            }
 
             KeyboardStageView(store: store)
                 .padding(12)
                 .frame(maxHeight: .infinity, alignment: .top)
         }
         .arkeyPanel(radius: 16)
-        .help("选择动作后点击键位，或把动作拖到键位")
+        .help(store.isCodexMicroLab ? "选择槽位后点击实体键位" : "选择动作后点击键位，或把动作拖到键位")
     }
 
     private var header: some View {
@@ -677,6 +686,7 @@ struct ContentView: View {
     }
 
     private var workspaceSubtitle: String {
+        if store.isCodexMicroLab { return "Local hardware configuration" }
         guard let task = store.selectedTask else { return store.profile.name }
         var parts = [task.state.title]
         if let effort = task.reasoningEffort { parts.append(effort) }
@@ -685,11 +695,11 @@ struct ContentView: View {
     }
 
     private var headerTitle: String {
-        store.selectedTask?.title ?? "Command surface"
+        store.isCodexMicroLab ? "Codex Micro Lab" : (store.selectedTask?.title ?? "Command surface")
     }
 
     private var statusColor: Color {
-        if store.isUSBV2Ready && store.appServerReady {
+        if store.isCodexMicroLab || (store.isUSBV2Ready && store.appServerReady) {
             return ArkeyTheme.accent
         }
         if store.transport == .unavailable { return ArkeyTheme.danger }
@@ -697,10 +707,11 @@ struct ContentView: View {
     }
 
     private var connectionNeedsAttention: Bool {
-        !(store.isUSBV2Ready && store.appServerReady)
+        !store.isCodexMicroLab && !(store.isUSBV2Ready && store.appServerReady)
     }
 
     private var connectionSummary: String {
+        if store.isCodexMicroLab { return "Codex Micro Lab connected" }
         if store.isUSBV2Ready && store.appServerReady { return "Keyboard and Codex connected" }
         if store.isUSBV2Ready { return "Keyboard connected · Codex waiting" }
         switch store.transport {

@@ -1,9 +1,10 @@
 # Architecture
 
-Arkey is two local integrations joined by one daemon. The Codex side uses the
-public Codex App Server interface; the keyboard side uses an independent Arkey
-message format over QMK Raw HID. Neither side pretends that the keyboard is a
-Codex Micro device.
+Arkey's default mode is two local integrations joined by one daemon. The Codex
+side uses the documented Codex App Server interface; the keyboard side uses an
+independent Arkey message format over QMK Raw HID. An optional and isolated
+Codex Micro Lab path exists for development-only interoperability testing. It
+does not run through the daemon and must not be confused with the default mode.
 
 ```text
 Arkey macOS app
@@ -16,6 +17,11 @@ Arkey macOS app
   │       └── USB Raw HID ──► QMK firmware ──► physical keys + RGB Matrix
   │
   └── local speech-to-text (optional; text remains in Composer until sent)
+
+Optional Codex Micro Lab:
+
+ChatGPT Desktop ── report 0x06 ──► Q6 Pro Lab firmware
+Arkey app / config CLI ── report 0x07 ──► mapping EEPROM
 ```
 
 ## macOS application
@@ -101,12 +107,39 @@ restore, or daemon shutdown.
 
 Official transport reference: <https://docs.qmk.fm/features/rawhid>
 
+## Codex Micro Lab boundary
+
+The Lab build is an explicitly acknowledged compatibility experiment for an
+owned Keychron Q6 Pro. It temporarily enumerates with the identity expected by
+the current desktop integration and exposes a 64-byte native-facing report.
+That surface is not a public OpenAI API, is not supported by OpenAI or Work
+Louder, may break with a desktop update, and is never enabled by the standard
+Arkey firmware build.
+
+Lab configuration is deliberately separated onto Arkey-defined Report ID
+`0x07`. Its frame contains magic `0xA7`, protocol version, opcode, sequence,
+payload length, and payload. The Mac client and
+`scripts/codex-micro-lab-config.mjs` use it to store matrix mappings in the QMK
+user EEPROM block. No proprietary SDK is included.
+
+The native mapping has 13 semantic targets: six Agent slots, six Command slots,
+and one Encoder target. Four additional joystick directions emit directional
+events; they are not command slots. In particular, App Server actions `skill`
+and `cancel` have no native Lab target and are skipped rather than guessed onto
+joystick directions.
+
+The complete protocol and operational guardrails are in
+[`CODEX_MICRO_LAB.md`](CODEX_MICRO_LAB.md).
+
 ## Data and trust boundaries
 
-- `~/.arkey/settings.json`: workspace path and UI/runtime settings.
-- `~/.arkey/bindings.json`: physical-control to action bindings.
-- `~/.arkey/tasks.json`: task IDs, thread IDs, titles, and state metadata.
+- `~/.arkey/settings-v1.json`: workspace path and UI/runtime settings.
+- `~/.arkey/bindings-v1.json`: physical-control to action bindings.
+- `~/.arkey/appserver-tasks-v1.json`: task IDs, thread IDs, titles, and state metadata.
 - `~/.arkey/arkey.sock`: local daemon RPC/event socket.
+- QMK user EEPROM: Lab target-to-matrix mappings and checksum. This storage
+  layout is experimental and may require restoring VIA settings after changing
+  firmware families.
 - Codex session content and credentials remain under Codex's own storage and
   account controls.
 - Speech audio is sent to Apple's local speech APIs by the macOS process and is

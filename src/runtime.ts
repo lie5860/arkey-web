@@ -52,6 +52,35 @@ export const runtimeDir = join(homedir(), ".arkey");
 export const socketPath = join(runtimeDir, "arkey.sock");
 export const pidPath = join(runtimeDir, "arkey.pid");
 
+interface DefaultQ6Binding {
+  controlId: string;
+  instanceId: string;
+  actionId: string;
+  taskSlotIndex?: number;
+}
+
+// The out-of-box Q6 Pro layout mirrors the original AgentGlow setup. Agent and
+// high-frequency command keys stay on the numpad, while the four approval /
+// continuation controls use F13-F16. Task IDs are resolved from the fresh
+// runtime's stable slot indexes instead of copying machine-specific IDs.
+export const defaultQ6Bindings: readonly DefaultQ6Binding[] = [
+  { controlId: "r4c17", instanceId: "task-agent-1", actionId: "task_agent", taskSlotIndex: 0 },
+  { controlId: "r4c18", instanceId: "task-agent-2", actionId: "task_agent", taskSlotIndex: 1 },
+  { controlId: "r4c19", instanceId: "task-agent-3", actionId: "task_agent", taskSlotIndex: 2 },
+  { controlId: "r3c17", instanceId: "task-agent-4", actionId: "task_agent", taskSlotIndex: 3 },
+  { controlId: "r3c18", instanceId: "task-agent-5", actionId: "task_agent", taskSlotIndex: 4 },
+  { controlId: "r3c19", instanceId: "task-agent-6", actionId: "task_agent", taskSlotIndex: 5 },
+  { controlId: "r0c17", instanceId: "approveCurrent", actionId: "approve" },
+  { controlId: "r0c18", instanceId: "continueNewTask", actionId: "continue" },
+  { controlId: "r0c19", instanceId: "cancelFocusedControl", actionId: "cancel" },
+  { controlId: "r0c20", instanceId: "declineCurrent", actionId: "decline" },
+  { controlId: "r1c18", instanceId: "openSkill", actionId: "skill" },
+  { controlId: "r2c20", instanceId: "toggleFastMode", actionId: "fast" },
+  { controlId: "r5c18", instanceId: "pushToTalk", actionId: "ptt" },
+  { controlId: "r4c20", instanceId: "send", actionId: "send" },
+  { controlId: "encoder-0", instanceId: "dialReasoning", actionId: "reasoning" },
+] as const;
+
 export type LegacyRuntimeMessage =
   | { type: "event"; source: "codex" | "manual"; state: AgentState }
   | { type: "text"; source: "codex" | "manual"; text: string }
@@ -219,6 +248,7 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
     mkdirSync(this.directory, { recursive: true, mode: 0o700 });
     rmSync(this.daemonSocketPath, { force: true });
     writeFileSync(this.daemonPidPath, String(process.pid), { mode: 0o600 });
+    this.ensureDefaultBindings();
     this.stores.settings.write(this.settings);
     this.stores.bindings.write(this.bindingState);
     this.persistTasks();
@@ -1083,6 +1113,31 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
       this.taskState.selectedTaskId = this.taskState.tasks[0].taskId;
       this.taskState.tasks[0].selected = true;
     }
+  }
+
+  private ensureDefaultBindings(): void {
+    // Revision zero is the untouched state written by the first public build.
+    // A user-cleared layout has a later revision and must remain empty.
+    if (this.bindingState.revision !== 0 || this.bindingState.bindings.length !== 0) return;
+    const tasksBySlot = new Map(this.taskState.tasks.map((task) => [task.slotIndex, task]));
+    const timestamp = this.now().toISOString();
+    const bindings = defaultQ6Bindings.flatMap((template): Binding[] => {
+      const taskId = template.taskSlotIndex === undefined
+        ? undefined
+        : tasksBySlot.get(template.taskSlotIndex)?.taskId;
+      if (template.taskSlotIndex !== undefined && !taskId) return [];
+      return [{
+        controlId: template.controlId,
+        instanceId: template.instanceId,
+        actionId: template.actionId,
+        taskId,
+        profileId: q6ProAnsi.profileId,
+        layoutHash: q6ProAnsi.layoutHash,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      }];
+    });
+    this.bindingState = { version: 1, revision: 1, bindings };
   }
 
   private createTask(title?: string): TaskSlot {

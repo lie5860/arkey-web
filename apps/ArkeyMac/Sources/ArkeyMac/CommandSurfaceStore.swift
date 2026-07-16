@@ -61,9 +61,14 @@ final class CommandSurfaceStore: ObservableObject {
     @Published var structuredApprovalRequest: StructuredApprovalRequest?
     @Published var workspaceRoot = FileManager.default.currentDirectoryPath
     @Published var workflowPreviewText = ""
+    @Published private(set) var isCodexMicroLab = false
+    @Published var selectedCodexMicroTarget: CodexMicroLabTarget = .agent1
+    @Published private(set) var codexMicroLabSnapshot = CodexMicroLabSnapshot.nativeDefault
 
     private let controller: ArkeyController
     private let observer = ArkeyEventObserver()
+    private let codexMicroLab = CodexMicroLabService()
+    private let codexMicroLabCacheKey = "arkey.codex-micro-lab.snapshot.v1"
     private var previewStopTask: Task<Void, Never>?
     private var observerRetryTask: Task<Void, Never>?
     private var observerRetrySeconds = 1
@@ -101,6 +106,7 @@ final class CommandSurfaceStore: ObservableObject {
         loadCanonicalProfileFromDisk()
         loadCanonicalEffectsFromDisk()
         developerEffect.atmosphereMix = effectCatalog.atmosphereMix
+        loadCodexMicroLabCache()
     }
 
     func publishMessage(_ value: String, severity: CommandSurfaceMessageSeverity = .info) {
@@ -137,10 +143,11 @@ final class CommandSurfaceStore: ObservableObject {
     }
 
     var isUSBV2Ready: Bool {
-        transport == .usb && firmwareExtensionVersion == 2 && profileMatches
+        isCodexMicroLab || (transport == .usb && firmwareExtensionVersion == 2 && profileMatches)
     }
 
     var hardwarePreviewDisabledReason: String? {
+        if isCodexMicroLab { return "Codex Micro Lab 由 Codex Desktop 自行驱动灯光；Arkey daemon 不写入该模式。" }
         if transport == .bluetooth { return "Bluetooth 模式没有 Raw HID 灯效通道。" }
         if transport != .usb { return "未检测到 USB 键盘。" }
         if deviceSupport == "via-only" { return "VIA-only firmware 没有 ARkey 单键灯效协议。" }
@@ -152,6 +159,7 @@ final class CommandSurfaceStore: ObservableObject {
 
     var restrictionMessage: String? {
         if restrictionDismissed { return nil }
+        if isCodexMicroLab { return nil }
         if transport == .bluetooth {
             return "当前仅检测到 Bluetooth：键盘可正常输入，但任务键接管与硬件任务灯不会同步。"
         }
@@ -194,6 +202,8 @@ final class CommandSurfaceStore: ObservableObject {
     }
 
     func refresh() async {
+        if refreshCodexMicroLabIfConnected() { return }
+        isCodexMicroLab = false
         await controller.refresh()
         apply(status: controller.status)
 
@@ -215,6 +225,68 @@ final class CommandSurfaceStore: ObservableObject {
         if let response = try? await ArkeyCommand.rpc("binding.list") { applyBindingList(response) }
         if let response = try? await ArkeyCommand.rpc("actions.list") { applyActionCapabilities(response) }
         detectBluetoothFallback()
+    }
+
+    func refreshCodexMicroLab() async {
+        guard refreshCodexMicroLabIfConnected() else {
+            publishMessage("未发现 Codex Micro Lab；请确认键盘以 USB 连接且已刷入实验固件。", severity: .error)
+            return
+        }
+    }
+
+    func selectCodexMicroTarget(_ target: CodexMicroLabTarget) {
+        selectedCodexMicroTarget = target
+        message = "已选择 \(target.title)；现在点击要接入的实体键。该键会变为 Micro 独占。"
+    }
+
+    func codexMicroTarget(for control: KeyboardControl) -> CodexMicroLabTarget? {
+        guard let row = control.matrixRow, let column = control.matrixColumn else { return nil }
+        return codexMicroLabSnapshot.mappings.first(where: {
+            $0.value.row == UInt8(row) && $0.value.column == UInt8(column)
+        })?.key
+    }
+
+    func bindCodexMicroTarget(to controlId: String) async {
+        guard isCodexMicroLab,
+              let control = profile.controls.first(where: { $0.id == controlId }),
+              control.bindable,
+              let row = control.matrixRow,
+              let column = control.matrixColumn,
+              row >= 0, row <= Int(UInt8.max), column >= 0, column <= Int(UInt8.max) else {
+            publishMessage("这个物理控件不能用于 Codex Micro Lab 绑定。", severity: .error)
+            return
+        }
+
+        let position = CodexMicroLabPosition(row: UInt8(row), column: UInt8(column))
+        do {
+            try codexMicroLab.setMapping(target: selectedCodexMicroTarget, position: position)
+            var snapshot = codexMicroLabSnapshot
+            snapshot.mappings = snapshot.mappings.filter { $0.key != selectedCodexMicroTarget && $0.value != position }
+            snapshot.mappings[selectedCodexMicroTarget] = position
+            snapshot.encoderEnabled = true
+            snapshot.verification = .pendingReadback
+            applyCodexMicroLabSnapshot(snapshot, persist: true)
+            selectedControlId = controlId
+            lastBoundControlId = controlId
+            message = "\(selectedCodexMicroTarget.title) 已写入 \(control.label)。该键不再输出普通按键；\(snapshot.verification.detail)"
+        } catch {
+            publishMessage(error.localizedDescription, severity: .error)
+        }
+    }
+
+    func clearCodexMicroTarget(_ target: CodexMicroLabTarget? = nil) async {
+        let target = target ?? selectedCodexMicroTarget
+        do {
+            try codexMicroLab.clearMapping(target: target)
+            var snapshot = codexMicroLabSnapshot
+            snapshot.mappings.removeValue(forKey: target)
+            snapshot.encoderEnabled = true
+            snapshot.verification = .pendingReadback
+            applyCodexMicroLabSnapshot(snapshot, persist: true)
+            message = "\(target.title) 已清除；原实体键已恢复普通输入。\(snapshot.verification.detail)"
+        } catch {
+            publishMessage(error.localizedDescription, severity: .error)
+        }
     }
 
     func repairDaemonAndRefresh() async {
@@ -1686,6 +1758,61 @@ final class CommandSurfaceStore: ObservableObject {
             transport = .bluetooth
             deviceSupport = "bluetooth-only"
         }
+    }
+
+    private func refreshCodexMicroLabIfConnected() -> Bool {
+        guard codexMicroLab.isConnected else { return false }
+        isCodexMicroLab = true
+        transport = .usb
+        deviceSupport = "codex-micro-lab"
+        firmwareExtensionVersion = nil
+        profileMatches = true
+        appServerReady = false
+        authenticated = false
+
+        let readback = codexMicroLab.readMappingsIfAvailable()
+        var writeError: Error?
+        if readback?.encoderEnabled == false {
+            do {
+                try codexMicroLab.enableEncoder()
+            } catch {
+                writeError = error
+            }
+        }
+
+        var snapshot = CodexMicroLabSnapshot.resolvedForConnection(
+            readback: readback,
+            fallback: codexMicroLabSnapshot
+        )
+        if writeError != nil {
+            snapshot.verification = .pendingReadback
+        }
+        // A failed readback is not evidence that EEPROM is empty. ChatGPT may
+        // already own the HID interface, so never overwrite mappings based on
+        // that ambiguity. Fresh and migrated Lab firmware installs its own v2
+        // defaults; this client only reflects verified readback or cached UI.
+        applyCodexMicroLabSnapshot(snapshot, persist: readback != nil)
+
+        let name = codexMicroLab.deviceName ?? "Codex Micro Lab"
+        if let writeError {
+            publishMessage("已连接 \(name)，但原生映射或旋钮校正待重试：\(writeError.localizedDescription)", severity: .warning)
+        } else {
+            message = "已连接 \(name)；\(snapshot.verification.detail)"
+        }
+        return true
+    }
+
+    private func applyCodexMicroLabSnapshot(_ snapshot: CodexMicroLabSnapshot, persist: Bool) {
+        let normalized = CodexMicroLabSnapshot.normalizedForClient(snapshot)
+        codexMicroLabSnapshot = normalized
+        guard persist, let data = try? JSONEncoder().encode(normalized) else { return }
+        UserDefaults.standard.set(data, forKey: codexMicroLabCacheKey)
+    }
+
+    private func loadCodexMicroLabCache() {
+        guard let data = UserDefaults.standard.data(forKey: codexMicroLabCacheKey),
+              let snapshot = try? JSONDecoder().decode(CodexMicroLabSnapshot.self, from: data) else { return }
+        codexMicroLabSnapshot = CodexMicroLabSnapshot.normalizedForClient(snapshot)
     }
 
     private func readGitPreview() async -> String {

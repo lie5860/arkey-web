@@ -41,6 +41,86 @@ struct CommandSurfaceTests {
         #expect(oversized.stroke(1.8) == 1.8)
     }
 
+    @Test("Codex Micro starts with the native 13-slot Q6 mapping and permanent encoder control")
+    func codexMicroNativeDefaults() {
+        let expected: [CodexMicroLabTarget: CodexMicroLabPosition] = [
+            .agent1: .init(row: 4, column: 17),
+            .agent2: .init(row: 4, column: 18),
+            .agent3: .init(row: 4, column: 19),
+            .agent4: .init(row: 3, column: 17),
+            .agent5: .init(row: 3, column: 18),
+            .agent6: .init(row: 3, column: 19),
+            .command1: .init(row: 2, column: 20),
+            .command2: .init(row: 0, column: 17),
+            .command3: .init(row: 0, column: 20),
+            .command4: .init(row: 0, column: 18),
+            .command5: .init(row: 5, column: 18),
+            .command6: .init(row: 4, column: 20),
+            .encoderPress: .init(row: 0, column: 13)
+        ]
+
+        #expect(CodexMicroLabSnapshot.nativeDefault.mappings == expected)
+        #expect(CodexMicroLabSnapshot.nativeDefault.encoderEnabled)
+        #expect(CodexMicroLabSnapshot.nativeDefault.mappings.count == 13)
+        #expect(CodexMicroLabSnapshot.nativeDefault.mappings[.joystickUp] == nil)
+        #expect(CodexMicroLabSnapshot.nativeDefault.mappings[.joystickRight] == nil)
+        #expect(CodexMicroLabSnapshot.nativeDefault.mappings[.joystickDown] == nil)
+        #expect(CodexMicroLabSnapshot.nativeDefault.mappings[.joystickLeft] == nil)
+    }
+
+    @Test("Codex Micro cached and read-back snapshots cannot disable the encoder")
+    func codexMicroEncoderIsPermanent() {
+        let custom: [CodexMicroLabTarget: CodexMicroLabPosition] = [
+            .agent1: .init(row: 1, column: 2)
+        ]
+        let disabled = CodexMicroLabSnapshot(
+            mappings: custom,
+            encoderEnabled: false,
+            verification: .verified
+        )
+        let normalized = CodexMicroLabSnapshot.normalizedForClient(disabled)
+
+        #expect(normalized.encoderEnabled)
+        #expect(normalized.mappings == custom)
+        #expect(normalized.verification == .verified)
+    }
+
+    @Test("Codex Micro connection fallback never treats a failed readback as empty EEPROM")
+    func codexMicroFailedReadbackPreservesCachedMapping() {
+        let cached = CodexMicroLabSnapshot(
+            mappings: [.agent3: .init(row: 2, column: 4)],
+            encoderEnabled: true,
+            verification: .verified
+        )
+
+        let resolved = CodexMicroLabSnapshot.resolvedForConnection(
+            readback: nil,
+            fallback: cached
+        )
+
+        #expect(resolved.mappings == cached.mappings)
+        #expect(resolved.encoderEnabled)
+        #expect(resolved.verification == .pendingReadback)
+    }
+
+    @Test("Codex Micro explicit empty readback remains empty")
+    func codexMicroExplicitEmptyReadbackIsNotReset() {
+        let emptyReadback = CodexMicroLabSnapshot(
+            mappings: [:],
+            encoderEnabled: true,
+            verification: .verified
+        )
+
+        let resolved = CodexMicroLabSnapshot.resolvedForConnection(
+            readback: emptyReadback,
+            fallback: .nativeDefault
+        )
+
+        #expect(resolved.mappings.isEmpty)
+        #expect(resolved.encoderEnabled)
+        #expect(resolved.verification == .verified)
+    }
+
     @Test("request user input requires a non-empty answer for every unique question")
     func requestUserInputValidation() {
         let questions: [[String: Any]] = [["id": "choice"]]

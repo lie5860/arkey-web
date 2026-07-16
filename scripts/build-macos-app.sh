@@ -28,15 +28,15 @@ mkdir -p "$APP/Contents/Resources/ArkeyRuntime/dist"
 cp -R "$ROOT/dist/src" "$APP/Contents/Resources/ArkeyRuntime/dist/src"
 cp -R "$ROOT/profiles" "$APP/Contents/Resources/ArkeyRuntime/profiles"
 mkdir -p "$APP/Contents/Resources/ArkeyRuntime/docs"
-for document in ARCHITECTURE.md FIRMWARE.md PORTING_QMK.md; do
+for document in ARCHITECTURE.md CODEX_MICRO_LAB.md FIRMWARE.md PORTING_QMK.md; do
     cp "$ROOT/docs/$document" "$APP/Contents/Resources/ArkeyRuntime/docs/$document"
+done
+mkdir -p "$APP/Contents/Resources/ArkeyRuntime/scripts"
+for script in codex-micro-lab-bindings.mjs codex-micro-lab-config.mjs; do
+    cp "$ROOT/scripts/$script" "$APP/Contents/Resources/ArkeyRuntime/scripts/$script"
 done
 cp "$ROOT/README.md" "$ROOT/LICENSE" "$ROOT/THIRD_PARTY_NOTICES.md" "$ROOT/TRADEMARKS.md" "$APP/Contents/Resources/ArkeyRuntime/"
 cp -R "$ROOT/LICENSES" "$APP/Contents/Resources/ArkeyRuntime/LICENSES"
-if [ -f "$ROOT/build/arkey-q6-pro-ansi-v0.1.0.bin" ]; then
-    mkdir -p "$APP/Contents/Resources/ArkeyRuntime/build"
-    cp "$ROOT/build/arkey-q6-pro-ansi-v0.1.0.bin" "$APP/Contents/Resources/ArkeyRuntime/build/"
-fi
 mkdir -p "$APP/Contents/Resources/ArkeyRuntime/node_modules"
 for module in node-hid node-addon-api pkg-prebuilds; do
     cp -R "$ROOT/node_modules/$module" "$APP/Contents/Resources/ArkeyRuntime/node_modules/$module"

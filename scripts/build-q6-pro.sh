@@ -30,9 +30,16 @@ if [ "$ACTUAL_QMK_COMMIT" != "$EXPECTED_QMK_COMMIT" ] && [ "${ARKEY_ALLOW_UNTEST
 fi
 
 for file in q6_pro.c rules.mk; do
-  git -C "$QMK_HOME" diff --quiet -- "keyboards/keychron/q6_pro/$file" || {
+  git -C "$QMK_HOME" diff --quiet HEAD -- "keyboards/keychron/q6_pro/$file" || {
     echo "Refusing to alter dirty QMK file: $file" >&2; exit 1;
   }
+done
+
+for file in arkey.c arkey.h arkey_generated.h rgb_matrix_kb.inc; do
+  if [ -e "$TARGET/$file" ]; then
+    echo "Refusing to overwrite existing QMK file: keyboards/keychron/q6_pro/$file" >&2
+    exit 1
+  fi
 done
 
 cleanup() {

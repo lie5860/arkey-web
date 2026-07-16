@@ -34,6 +34,15 @@ struct KeyboardStageView: View {
 
     @ViewBuilder
     private func controlView(_ control: KeyboardControl, date: Date, geometry: StageGeometry) -> some View {
+        if store.isCodexMicroLab {
+            codexMicroControlView(control, date: date, geometry: geometry)
+        } else {
+            arkeyControlView(control, date: date, geometry: geometry)
+        }
+    }
+
+    @ViewBuilder
+    private func arkeyControlView(_ control: KeyboardControl, date: Date, geometry: StageGeometry) -> some View {
         let frame = geometry.frame(for: control)
         let metrics = KeyboardStageMetrics(unitScale: geometry.unitScale)
         let binding = store.bindings[control.id]
@@ -149,6 +158,186 @@ struct KeyboardStageView: View {
         .accessibilityLabel(accessibilityLabel(control: control, binding: binding))
         .accessibilityHint("点击可绑定当前高亮功能；也可以把 Dock 图标拖到这里")
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private func codexMicroControlView(_ control: KeyboardControl, date: Date, geometry: StageGeometry) -> some View {
+        let frame = geometry.frame(for: control)
+        let metrics = KeyboardStageMetrics(unitScale: geometry.unitScale)
+        let target = store.codexMicroTarget(for: control)
+        let selected = store.selectedControlId == control.id
+        let recentlyBound = store.lastBoundControlId == control.id
+        let hovered = hoveredControlId == control.id
+        let light = target == nil ? store.lightingColor(for: control, at: date) : ArkeyTheme.accent
+
+        Button {
+            store.selectedControlId = control.id
+            Task { await store.bindCodexMicroTarget(to: control.id) }
+        } label: {
+            Group {
+                if control.kind == .encoder {
+                    codexMicroKnob(
+                        control: control,
+                        target: target,
+                        light: light,
+                        selected: selected,
+                        hovered: hovered,
+                        metrics: metrics
+                    )
+                } else {
+                    codexMicroKeycap(
+                        control: control,
+                        target: target,
+                        light: light,
+                        selected: selected,
+                        hovered: hovered,
+                        metrics: metrics
+                    )
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(width: frame.width, height: frame.height)
+        .contentShape(Rectangle())
+        .scaleEffect(hovered && !reduceMotion ? 1.025 : 1)
+        .offset(
+            x: frame.minX,
+            y: frame.minY
+                - (recentlyBound && !reduceMotion ? metrics.decoration(5) : 0)
+                - (hovered && !reduceMotion ? metrics.decoration(1) : 0)
+        )
+        .shadow(
+            color: recentlyBound ? light.opacity(0.8) : (hovered ? .black.opacity(0.28) : .clear),
+            radius: metrics.decoration(recentlyBound ? 12 : 7),
+            y: metrics.decoration(recentlyBound ? 5 : 3)
+        )
+        .animation(reduceMotion ? .easeOut(duration: 0.14) : .spring(response: 0.24, dampingFraction: 0.68), value: recentlyBound)
+        .animation(.easeOut(duration: 0.12), value: hovered)
+        .onHover { isHovered in
+            if isHovered {
+                hoveredControlId = control.id
+            } else if hoveredControlId == control.id {
+                hoveredControlId = nil
+            }
+        }
+        .contextMenu {
+            if let target {
+                Button("清除 \(target.title)", role: .destructive) {
+                    Task { await store.clearCodexMicroTarget(target) }
+                }
+            } else {
+                Button("绑定 \(store.selectedCodexMicroTarget.title)") {
+                    Task { await store.bindCodexMicroTarget(to: control.id) }
+                }
+            }
+        }
+        .help(codexMicroAccessibilityLabel(control: control, target: target))
+        .accessibilityLabel(codexMicroAccessibilityLabel(control: control, target: target))
+        .accessibilityHint(target == nil ? "点击会把当前 Micro 槽位接入该实体键。" : "该键已被 Codex Micro 独占；可通过菜单清除。")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func codexMicroKeycap(
+        control: KeyboardControl,
+        target: CodexMicroLabTarget?,
+        light: Color,
+        selected: Bool,
+        hovered: Bool,
+        metrics: KeyboardStageMetrics
+    ) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: metrics.content(min(8, 4 + control.width)), style: .continuous)
+                .fill(light.opacity(target == nil ? (hovered ? 0.15 : 0.08) : (hovered ? 0.46 : 0.38)))
+                .overlay {
+                    RoundedRectangle(cornerRadius: metrics.content(min(8, 4 + control.width)), style: .continuous)
+                        .strokeBorder(
+                            interactionStroke(
+                                light: light,
+                                selected: selected,
+                                hovered: hovered,
+                                dropTargeted: false,
+                                idleOpacity: target == nil ? 0.24 : 0.82
+                            ),
+                            lineWidth: metrics.stroke(selected ? 1.4 : (hovered ? 1 : 0.75))
+                        )
+                }
+            if let target {
+                VStack(spacing: metrics.content(1)) {
+                    Image(systemName: target.symbol)
+                        .font(.system(size: metrics.font(9), weight: .semibold))
+                    Text(target.shortTitle)
+                        .font(.system(size: metrics.font(7), weight: .black, design: .monospaced))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.65)
+                }
+                .foregroundStyle(.white)
+            } else {
+                Text(control.label)
+                    .font(.system(size: metrics.font(control.width > 1.4 ? 7 : 8), weight: .medium))
+                    .foregroundStyle(.white.opacity(hovered ? 0.74 : 0.48))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .padding(metrics.content(2))
+            }
+        }
+    }
+
+    private func codexMicroKnob(
+        control: KeyboardControl,
+        target: CodexMicroLabTarget?,
+        light: Color,
+        selected: Bool,
+        hovered: Bool,
+        metrics: KeyboardStageMetrics
+    ) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.white.opacity(0.18), Color.black.opacity(0.74)],
+                        center: .topLeading,
+                        startRadius: metrics.content(1),
+                        endRadius: metrics.content(30)
+                    )
+                )
+                .overlay(
+                    Circle().stroke(
+                        interactionStroke(
+                            light: light,
+                            selected: selected,
+                            hovered: hovered,
+                            dropTargeted: false,
+                            idleOpacity: target == nil ? 0.45 : 0.82
+                        ),
+                        lineWidth: metrics.stroke(selected ? 1.6 : (hovered ? 1.2 : 0.9))
+                    )
+                )
+            Circle()
+                .trim(from: 0.08, to: 0.92)
+                .stroke(
+                    light.opacity(target == nil ? 0.45 : 0.92),
+                    style: StrokeStyle(
+                        lineWidth: metrics.decoration(2),
+                        lineCap: .round,
+                        dash: [metrics.decoration(2), metrics.decoration(3)]
+                    )
+                )
+                .rotationEffect(.degrees(90))
+                .padding(metrics.content(3))
+            if let target {
+                Text(target.shortTitle)
+                    .font(.system(size: metrics.font(7), weight: .black, design: .monospaced))
+                    .foregroundStyle(.white)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            Text("MICRO")
+                .font(.system(size: metrics.font(4.8, minimum: 6), weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.45))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .offset(y: metrics.content(8))
+        }
     }
 
     private func keycap(
@@ -287,6 +476,12 @@ struct KeyboardStageView: View {
         let name = control.kind == .encoder ? "旋钮，无 LED" : (control.label.isEmpty ? control.id : control.label)
         if let binding { return "\(name)，\(binding.active ? "已绑定" : "等待设备同步") \(binding.action.title)" }
         return "\(name)，未绑定"
+    }
+
+    private func codexMicroAccessibilityLabel(control: KeyboardControl, target: CodexMicroLabTarget?) -> String {
+        let name = control.kind == .encoder ? "旋钮按下，无 LED" : (control.label.isEmpty ? control.id : control.label)
+        if let target { return "\(name)，Codex Micro 独占，\(target.title)" }
+        return "\(name)，未映射到 Codex Micro"
     }
 
 }

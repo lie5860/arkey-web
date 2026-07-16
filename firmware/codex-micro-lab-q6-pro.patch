@@ -1,0 +1,75 @@
+diff --git a/keyboards/keychron/q6_pro/q6_pro.c b/keyboards/keychron/q6_pro/q6_pro.c
+index 1a50a888e..53f45aba2 100644
+--- a/keyboards/keychron/q6_pro/q6_pro.c
++++ b/keyboards/keychron/q6_pro/q6_pro.c
+@@ -17,2 +17,3 @@
+ #include "q6_pro.h"
++#include "codex_micro_lab.h"
+ #ifdef KC_BLUETOOTH_ENABLE
+@@ -77,4 +78,6 @@ bool process_record_kb_bt(uint16_t keycode, keyrecord_t *record) {
+ #else
+ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+ #endif
++    if (!codex_micro_lab_process_record(keycode, record)) return false;
++
+     static uint8_t host_idx = 0;
+@@ -137,4 +140,8 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+     return true;
+ }
++
++bool encoder_preprocess_kb(uint8_t index, bool clockwise) {
++    return codex_micro_lab_encoder_preprocess(index, clockwise);
++}
+
+ #if defined(KC_BLUETOOTH_ENABLE) && defined(ENCODER_ENABLE)
+@@ -183,2 +186,4 @@
+ void matrix_scan_kb(void) {
++    codex_micro_lab_task();
++
+     if (factory_timer_buffer && timer_elapsed32(factory_timer_buffer) > 2000) {
+@@ -304,2 +309,4 @@
+ bool via_command_kb(uint8_t *data, uint8_t length) {
++    if (codex_micro_lab_command(data, length)) return true;
++
+     switch (data[0]) {
+diff --git a/keyboards/keychron/q6_pro/rules.mk b/keyboards/keychron/q6_pro/rules.mk
+index af9e1e706..4832fb057 100644
+--- a/keyboards/keychron/q6_pro/rules.mk
++++ b/keyboards/keychron/q6_pro/rules.mk
+@@ -1,2 +1,5 @@
++SRC += codex_micro_lab.c
++OPT_DEFS += -DEECONFIG_USER_DATA_SIZE=64
++
+ # Enter lower-power sleep mode when on the ChibiOS idle thread
+ OPT_DEFS += -DCORTEX_ENABLE_WFI_IDLE=TRUE
+diff --git a/keyboards/keychron/q6_pro/info.json b/keyboards/keychron/q6_pro/info.json
+index 2cba00ac0..a36c22280 100644
+--- a/keyboards/keychron/q6_pro/info.json
++++ b/keyboards/keychron/q6_pro/info.json
+@@ -1,10 +1,10 @@
+ {
+-    "manufacturer": "Keychron",
+-    "keyboard_name": "Keychron Q6 Pro",
++    "manufacturer": "Work Louder",
++    "keyboard_name": "Arkey Codex Micro Lab",
+     "url": "https://github.com/Keychron",
+     "maintainer": "lalalademaxiya1",
+     "processor": "STM32L432",
+     "bootloader": "stm32-dfu",
+     "usb": {
+-        "vid": "0x3434"
++        "vid": "0x303A"
+     },
+diff --git a/keyboards/keychron/q6_pro/ansi_encoder/info.json b/keyboards/keychron/q6_pro/ansi_encoder/info.json
+index 50442f90a..58a9f5e98 100644
+--- a/keyboards/keychron/q6_pro/ansi_encoder/info.json
++++ b/keyboards/keychron/q6_pro/ansi_encoder/info.json
+@@ -1,6 +1,6 @@
+ {
+      "usb": {
+-    	"pid": "0x0660",
++        "pid": "0x8360",
+-    	"device_version": "1.0.2"
++        "device_version": "1.0.0"
+     },
+     "layouts": {

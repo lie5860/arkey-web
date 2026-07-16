@@ -4,15 +4,26 @@
 node_modules/
 dist/
 build/
+coverage/
+.nyc_output/
 *.bin
 *.hex
 *.uf2
 *.log
+*.dSYM/
+*.xcarchive/
+*.orig
+*.rej
 
 apps/ArkeyMac/.build/
 apps/ArkeyMac/.swiftpm/
 DerivedData/
 *.xcuserstate
+
+qmk_firmware/
+.qmk/
+.vscode/
+.idea/
 
 .env
 .env.*
@@ -20,5 +31,9 @@ DerivedData/
 
 docs/*RESEARCH*.md
 docs/*REPORT*.md
+docs/*STRATEGY*.md
+docs/*AUDIT*.md
+docs/*HANDOFF*.md
+docs/*NOTES*.md
 docs/AGENT_HANDOFF.md
 docs/PREFLIGHT-AUDIT.md
