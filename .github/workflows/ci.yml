@@ -26,7 +26,7 @@ jobs:
 
   macos-app:
     name: macOS app
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
@@ -35,6 +35,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: swift --version
       - run: swift test --package-path apps/ArkeyMac
       - run: ./scripts/build-macos-app.sh
       - run: codesign --verify --deep --strict --verbose=2 build/Arkey.app
