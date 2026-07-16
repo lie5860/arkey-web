@@ -212,6 +212,7 @@ enum ArkeyCommand {
         }.value
     }
 
+    @MainActor
     static func rpc(_ method: String, payload: [String: Any] = [:]) async throws -> String {
         let data = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
         let json = String(decoding: data, as: UTF8.self)
