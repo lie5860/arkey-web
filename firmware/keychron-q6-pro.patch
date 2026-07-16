@@ -1,0 +1,35 @@
+diff --git a/keyboards/keychron/q6_pro/q6_pro.c b/keyboards/keychron/q6_pro/q6_pro.c
+index 8a50d3261176560cd47c4a5ac05d7bd630e09019..c098ee98da2b1d34b6b4ab739a800798eab9e806 100755
+--- a/keyboards/keychron/q6_pro/q6_pro.c
++++ b/keyboards/keychron/q6_pro/q6_pro.c
+@@ -17,2 +17,3 @@
+ #include "q6_pro.h"
++#include "arkey.h"
+ #ifdef KC_BLUETOOTH_ENABLE
+@@ -77,4 +78,6 @@ bool process_record_kb_bt(uint16_t keycode, keyrecord_t *record) {
+ #else
+ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+ #endif
++    if (!arkey_process_record(keycode, record)) return false;
++
+     static uint8_t host_idx = 0;
+@@ -183,2 +186,4 @@
+ void matrix_scan_kb(void) {
++    arkey_task();
++
+     if (factory_timer_buffer && timer_elapsed32(factory_timer_buffer) > 2000) {
+@@ -304,2 +309,4 @@
+ bool via_command_kb(uint8_t *data, uint8_t length) {
++    if (arkey_command(data, length)) return true;
++
+     switch (data[0]) {
+diff --git a/keyboards/keychron/q6_pro/rules.mk b/keyboards/keychron/q6_pro/rules.mk
+index f995372f9c4a2853acf06186fa49c3b85887ca9b..b7478bec789a55f972fe702fae84c6da673736b6 100755
+--- a/keyboards/keychron/q6_pro/rules.mk
++++ b/keyboards/keychron/q6_pro/rules.mk
+@@ -1,2 +1,5 @@
++RGB_MATRIX_CUSTOM_KB = yes
++SRC += arkey.c
++
+ # Enter lower-power sleep mode when on the ChibiOS idle thread
+ OPT_DEFS += -DCORTEX_ENABLE_WFI_IDLE=TRUE

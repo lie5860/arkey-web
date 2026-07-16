@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key><string>ARkey</string>
+    <key>CFBundleExecutable</key><string>ArkeyMac</string>
+    <key>CFBundleIconFile</key><string>Arkey</string>
+    <key>CFBundleIdentifier</key><string>dev.arkey.app</string>
+    <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+    <key>CFBundleName</key><string>ARkey</string>
+    <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleShortVersionString</key><string>0.1.0</string>
+    <key>CFBundleVersion</key><string>1</string>
+    <key>LSMinimumSystemVersion</key><string>14.0</string>
+    <key>NSHighResolutionCapable</key><true/>
+    <key>NSMicrophoneUsageDescription</key><string>ARkey 使用麦克风把按住说话内容转写到 Composer，不保存音频，也不会自动发送。</string>
+    <key>NSSpeechRecognitionUsageDescription</key><string>ARkey 使用系统语音识别把语音转成待发送的提示词。</string>
+</dict>
+</plist>

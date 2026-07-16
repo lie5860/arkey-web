@@ -1,0 +1,31 @@
+Arkey is a multi-license repository.
+
+Required Notice: Copyright 2026 shuhari04.
+
+1. Except where a file or directory says otherwise, the original Arkey software,
+   profiles, scripts, documentation, tests, and CI configuration are licensed
+   under the PolyForm Noncommercial License 1.0.0 in
+   LICENSES/PolyForm-Noncommercial-1.0.0.txt.
+
+2. The QMK and Keychron firmware integration under firmware/ is a mixed-license
+   aggregation:
+
+   - firmware/keychron-q6-pro.patch is licensed under GPL-2.0-only because it is
+     a patch to GPL-covered Keychron/QMK source files.
+   - firmware/qmk/arkey.c, firmware/qmk/arkey.h,
+     firmware/qmk/arkey_generated.h, and firmware/qmk/rgb_matrix_kb.inc are
+     licensed under the MIT License, as indicated by their SPDX headers.
+   - The firmware produced by applying these changes to Keychron/QMK remains
+     subject to all applicable upstream licenses, principally GPL-2.0-only.
+
+   The PolyForm noncommercial restriction does not apply to firmware/.
+
+3. Third-party dependencies retain their own licenses. See
+   THIRD_PARTY_NOTICES.md and the dependency lockfiles.
+
+4. The Arkey name and logo are not licensed for reuse by the software licenses.
+   See TRADEMARKS.md.
+
+File-level SPDX identifiers and upstream notices control if they conflict with
+this summary. This file is a scope map, not a replacement for the full license
+texts in LICENSES/.

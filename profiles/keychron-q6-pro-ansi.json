@@ -1,0 +1,2772 @@
+{
+  "$schema": "./schema.json",
+  "profileId": "keychron-q6-pro-ansi-knob",
+  "version": 2,
+  "layoutHash": "de355358987dddc4f73a610892192e63e36facecc2417aa4b4e0ac4a40a63346",
+  "name": "Keychron Q6 Pro ANSI Knob",
+  "transports": {
+    "usb": {
+      "vendorId": 13364,
+      "productIds": [
+        1632
+      ],
+      "usagePage": 65376,
+      "usage": 97,
+      "mode": "full"
+    },
+    "bluetooth": {
+      "vendorId": 13364,
+      "productIds": [
+        1632
+      ],
+      "usagePage": 1,
+      "usage": 6,
+      "mode": "degraded"
+    }
+  },
+  "matrix": {
+    "rows": 6,
+    "columns": 21
+  },
+  "ledCount": 108,
+  "controls": [
+    {
+      "id": "r0c0",
+      "kind": "key",
+      "label": "Esc",
+      "code": "KC_ESC",
+      "matrix": {
+        "row": 0,
+        "column": 0
+      },
+      "ledIndex": 0,
+      "bindable": true,
+      "unit": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c1",
+      "kind": "key",
+      "label": "F1",
+      "code": "KC_BRID",
+      "matrix": {
+        "row": 0,
+        "column": 1
+      },
+      "ledIndex": 1,
+      "bindable": true,
+      "unit": {
+        "x": 1.25,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.055556,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c2",
+      "kind": "key",
+      "label": "F2",
+      "code": "KC_BRIU",
+      "matrix": {
+        "row": 0,
+        "column": 2
+      },
+      "ledIndex": 2,
+      "bindable": true,
+      "unit": {
+        "x": 2.25,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.1,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c3",
+      "kind": "key",
+      "label": "F3",
+      "code": "KC_MCTL",
+      "matrix": {
+        "row": 0,
+        "column": 3
+      },
+      "ledIndex": 3,
+      "bindable": true,
+      "unit": {
+        "x": 3.25,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.144444,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c4",
+      "kind": "key",
+      "label": "F4",
+      "code": "KC_LPAD",
+      "matrix": {
+        "row": 0,
+        "column": 4
+      },
+      "ledIndex": 4,
+      "bindable": true,
+      "unit": {
+        "x": 4.25,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.188889,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c5",
+      "kind": "key",
+      "label": "F5",
+      "code": "RGB_VAD",
+      "matrix": {
+        "row": 0,
+        "column": 5
+      },
+      "ledIndex": 5,
+      "bindable": true,
+      "unit": {
+        "x": 5.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.244444,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c6",
+      "kind": "key",
+      "label": "F6",
+      "code": "RGB_VAI",
+      "matrix": {
+        "row": 0,
+        "column": 6
+      },
+      "ledIndex": 6,
+      "bindable": true,
+      "unit": {
+        "x": 6.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.288889,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c7",
+      "kind": "key",
+      "label": "F7",
+      "code": "KC_MPRV",
+      "matrix": {
+        "row": 0,
+        "column": 7
+      },
+      "ledIndex": 7,
+      "bindable": true,
+      "unit": {
+        "x": 7.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.333333,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c8",
+      "kind": "key",
+      "label": "F8",
+      "code": "KC_MPLY",
+      "matrix": {
+        "row": 0,
+        "column": 8
+      },
+      "ledIndex": 8,
+      "bindable": true,
+      "unit": {
+        "x": 8.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.377778,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c9",
+      "kind": "key",
+      "label": "F9",
+      "code": "KC_MNXT",
+      "matrix": {
+        "row": 0,
+        "column": 9
+      },
+      "ledIndex": 9,
+      "bindable": true,
+      "unit": {
+        "x": 9.75,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.433333,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c10",
+      "kind": "key",
+      "label": "Mute",
+      "code": "KC_MUTE",
+      "matrix": {
+        "row": 0,
+        "column": 10
+      },
+      "ledIndex": 10,
+      "bindable": true,
+      "unit": {
+        "x": 10.75,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.477778,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c11",
+      "kind": "key",
+      "label": "F11",
+      "code": "KC_VOLD",
+      "matrix": {
+        "row": 0,
+        "column": 11
+      },
+      "ledIndex": 11,
+      "bindable": true,
+      "unit": {
+        "x": 11.75,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.522222,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c12",
+      "kind": "key",
+      "label": "F12",
+      "code": "KC_VOLU",
+      "matrix": {
+        "row": 0,
+        "column": 12
+      },
+      "ledIndex": 12,
+      "bindable": true,
+      "unit": {
+        "x": 12.75,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.566667,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c13",
+      "kind": "knobPress",
+      "label": "Mute",
+      "code": "KC_MUTE",
+      "matrix": {
+        "row": 0,
+        "column": 13
+      },
+      "ledIndex": null,
+      "bindable": true,
+      "unit": {
+        "x": 14,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.622222,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c14",
+      "kind": "key",
+      "label": "Snapshot",
+      "code": "KC_SNAP",
+      "matrix": {
+        "row": 0,
+        "column": 14
+      },
+      "ledIndex": 13,
+      "bindable": true,
+      "unit": {
+        "x": 15.25,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.677778,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c15",
+      "kind": "key",
+      "label": "Siri",
+      "code": "KC_SIRI",
+      "matrix": {
+        "row": 0,
+        "column": 15
+      },
+      "ledIndex": 14,
+      "bindable": true,
+      "unit": {
+        "x": 16.25,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.722222,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c16",
+      "kind": "key",
+      "label": "Light",
+      "code": "RGB_MOD",
+      "matrix": {
+        "row": 0,
+        "column": 16
+      },
+      "ledIndex": 15,
+      "bindable": true,
+      "unit": {
+        "x": 17.25,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.766667,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c17",
+      "kind": "key",
+      "label": "F13",
+      "code": "KC_F13",
+      "matrix": {
+        "row": 0,
+        "column": 17
+      },
+      "ledIndex": 16,
+      "bindable": true,
+      "unit": {
+        "x": 18.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.822222,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c18",
+      "kind": "key",
+      "label": "F14",
+      "code": "KC_F14",
+      "matrix": {
+        "row": 0,
+        "column": 18
+      },
+      "ledIndex": 17,
+      "bindable": true,
+      "unit": {
+        "x": 19.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.866667,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c19",
+      "kind": "key",
+      "label": "F15",
+      "code": "KC_F15",
+      "matrix": {
+        "row": 0,
+        "column": 19
+      },
+      "ledIndex": 18,
+      "bindable": true,
+      "unit": {
+        "x": 20.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.911111,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r0c20",
+      "kind": "key",
+      "label": "F16",
+      "code": "KC_F16",
+      "matrix": {
+        "row": 0,
+        "column": 20
+      },
+      "ledIndex": 19,
+      "bindable": true,
+      "unit": {
+        "x": 21.5,
+        "y": 0,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.955556,
+        "y": 0,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c0",
+      "kind": "key",
+      "label": "`",
+      "code": "KC_GRV",
+      "matrix": {
+        "row": 1,
+        "column": 0
+      },
+      "ledIndex": 20,
+      "bindable": true,
+      "unit": {
+        "x": 0,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c1",
+      "kind": "key",
+      "label": "1",
+      "code": "KC_1",
+      "matrix": {
+        "row": 1,
+        "column": 1
+      },
+      "ledIndex": 21,
+      "bindable": true,
+      "unit": {
+        "x": 1,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.044444,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c2",
+      "kind": "key",
+      "label": "2",
+      "code": "KC_2",
+      "matrix": {
+        "row": 1,
+        "column": 2
+      },
+      "ledIndex": 22,
+      "bindable": true,
+      "unit": {
+        "x": 2,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.088889,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c3",
+      "kind": "key",
+      "label": "3",
+      "code": "KC_3",
+      "matrix": {
+        "row": 1,
+        "column": 3
+      },
+      "ledIndex": 23,
+      "bindable": true,
+      "unit": {
+        "x": 3,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.133333,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c4",
+      "kind": "key",
+      "label": "4",
+      "code": "KC_4",
+      "matrix": {
+        "row": 1,
+        "column": 4
+      },
+      "ledIndex": 24,
+      "bindable": true,
+      "unit": {
+        "x": 4,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.177778,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c5",
+      "kind": "key",
+      "label": "5",
+      "code": "KC_5",
+      "matrix": {
+        "row": 1,
+        "column": 5
+      },
+      "ledIndex": 25,
+      "bindable": true,
+      "unit": {
+        "x": 5,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.222222,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c6",
+      "kind": "key",
+      "label": "6",
+      "code": "KC_6",
+      "matrix": {
+        "row": 1,
+        "column": 6
+      },
+      "ledIndex": 26,
+      "bindable": true,
+      "unit": {
+        "x": 6,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.266667,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c7",
+      "kind": "key",
+      "label": "7",
+      "code": "KC_7",
+      "matrix": {
+        "row": 1,
+        "column": 7
+      },
+      "ledIndex": 27,
+      "bindable": true,
+      "unit": {
+        "x": 7,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.311111,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c8",
+      "kind": "key",
+      "label": "8",
+      "code": "KC_8",
+      "matrix": {
+        "row": 1,
+        "column": 8
+      },
+      "ledIndex": 28,
+      "bindable": true,
+      "unit": {
+        "x": 8,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.355556,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c9",
+      "kind": "key",
+      "label": "9",
+      "code": "KC_9",
+      "matrix": {
+        "row": 1,
+        "column": 9
+      },
+      "ledIndex": 29,
+      "bindable": true,
+      "unit": {
+        "x": 9,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.4,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c10",
+      "kind": "key",
+      "label": "0",
+      "code": "KC_0",
+      "matrix": {
+        "row": 1,
+        "column": 10
+      },
+      "ledIndex": 30,
+      "bindable": true,
+      "unit": {
+        "x": 10,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.444444,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c11",
+      "kind": "key",
+      "label": "-",
+      "code": "KC_MINS",
+      "matrix": {
+        "row": 1,
+        "column": 11
+      },
+      "ledIndex": 31,
+      "bindable": true,
+      "unit": {
+        "x": 11,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.488889,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c12",
+      "kind": "key",
+      "label": "=",
+      "code": "KC_EQL",
+      "matrix": {
+        "row": 1,
+        "column": 12
+      },
+      "ledIndex": 32,
+      "bindable": true,
+      "unit": {
+        "x": 12,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.533333,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c13",
+      "kind": "key",
+      "label": "Delete",
+      "code": "KC_BSPC",
+      "matrix": {
+        "row": 1,
+        "column": 13
+      },
+      "ledIndex": 33,
+      "bindable": true,
+      "unit": {
+        "x": 13,
+        "y": 1.25,
+        "width": 2,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.577778,
+        "y": 0.2,
+        "width": 0.088889,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c14",
+      "kind": "key",
+      "label": "Insert",
+      "code": "KC_INS",
+      "matrix": {
+        "row": 1,
+        "column": 14
+      },
+      "ledIndex": 34,
+      "bindable": true,
+      "unit": {
+        "x": 15.25,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.677778,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c15",
+      "kind": "key",
+      "label": "Home",
+      "code": "KC_HOME",
+      "matrix": {
+        "row": 1,
+        "column": 15
+      },
+      "ledIndex": 35,
+      "bindable": true,
+      "unit": {
+        "x": 16.25,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.722222,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c16",
+      "kind": "key",
+      "label": "PgUp",
+      "code": "KC_PGUP",
+      "matrix": {
+        "row": 1,
+        "column": 16
+      },
+      "ledIndex": 36,
+      "bindable": true,
+      "unit": {
+        "x": 17.25,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.766667,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c17",
+      "kind": "key",
+      "label": "Num",
+      "code": "KC_NUM",
+      "matrix": {
+        "row": 1,
+        "column": 17
+      },
+      "ledIndex": 37,
+      "bindable": true,
+      "unit": {
+        "x": 18.5,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.822222,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c18",
+      "kind": "key",
+      "label": "/",
+      "code": "KC_PSLS",
+      "matrix": {
+        "row": 1,
+        "column": 18
+      },
+      "ledIndex": 38,
+      "bindable": true,
+      "unit": {
+        "x": 19.5,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.866667,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c19",
+      "kind": "key",
+      "label": "*",
+      "code": "KC_PAST",
+      "matrix": {
+        "row": 1,
+        "column": 19
+      },
+      "ledIndex": 39,
+      "bindable": true,
+      "unit": {
+        "x": 20.5,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.911111,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r1c20",
+      "kind": "key",
+      "label": "-",
+      "code": "KC_PMNS",
+      "matrix": {
+        "row": 1,
+        "column": 20
+      },
+      "ledIndex": 40,
+      "bindable": true,
+      "unit": {
+        "x": 21.5,
+        "y": 1.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.955556,
+        "y": 0.2,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c0",
+      "kind": "key",
+      "label": "Tab",
+      "code": "KC_TAB",
+      "matrix": {
+        "row": 2,
+        "column": 0
+      },
+      "ledIndex": 41,
+      "bindable": true,
+      "unit": {
+        "x": 0,
+        "y": 2.25,
+        "width": 1.5,
+        "height": 1
+      },
+      "frame": {
+        "x": 0,
+        "y": 0.36,
+        "width": 0.066667,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c1",
+      "kind": "key",
+      "label": "Q",
+      "code": "KC_Q",
+      "matrix": {
+        "row": 2,
+        "column": 1
+      },
+      "ledIndex": 42,
+      "bindable": true,
+      "unit": {
+        "x": 1.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.066667,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c2",
+      "kind": "key",
+      "label": "W",
+      "code": "KC_W",
+      "matrix": {
+        "row": 2,
+        "column": 2
+      },
+      "ledIndex": 43,
+      "bindable": true,
+      "unit": {
+        "x": 2.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.111111,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c3",
+      "kind": "key",
+      "label": "E",
+      "code": "KC_E",
+      "matrix": {
+        "row": 2,
+        "column": 3
+      },
+      "ledIndex": 44,
+      "bindable": true,
+      "unit": {
+        "x": 3.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.155556,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c4",
+      "kind": "key",
+      "label": "R",
+      "code": "KC_R",
+      "matrix": {
+        "row": 2,
+        "column": 4
+      },
+      "ledIndex": 45,
+      "bindable": true,
+      "unit": {
+        "x": 4.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.2,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c5",
+      "kind": "key",
+      "label": "T",
+      "code": "KC_T",
+      "matrix": {
+        "row": 2,
+        "column": 5
+      },
+      "ledIndex": 46,
+      "bindable": true,
+      "unit": {
+        "x": 5.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.244444,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c6",
+      "kind": "key",
+      "label": "Y",
+      "code": "KC_Y",
+      "matrix": {
+        "row": 2,
+        "column": 6
+      },
+      "ledIndex": 47,
+      "bindable": true,
+      "unit": {
+        "x": 6.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.288889,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c7",
+      "kind": "key",
+      "label": "U",
+      "code": "KC_U",
+      "matrix": {
+        "row": 2,
+        "column": 7
+      },
+      "ledIndex": 48,
+      "bindable": true,
+      "unit": {
+        "x": 7.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.333333,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c8",
+      "kind": "key",
+      "label": "I",
+      "code": "KC_I",
+      "matrix": {
+        "row": 2,
+        "column": 8
+      },
+      "ledIndex": 49,
+      "bindable": true,
+      "unit": {
+        "x": 8.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.377778,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c9",
+      "kind": "key",
+      "label": "O",
+      "code": "KC_O",
+      "matrix": {
+        "row": 2,
+        "column": 9
+      },
+      "ledIndex": 50,
+      "bindable": true,
+      "unit": {
+        "x": 9.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.422222,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c10",
+      "kind": "key",
+      "label": "P",
+      "code": "KC_P",
+      "matrix": {
+        "row": 2,
+        "column": 10
+      },
+      "ledIndex": 51,
+      "bindable": true,
+      "unit": {
+        "x": 10.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.466667,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c11",
+      "kind": "key",
+      "label": "[",
+      "code": "KC_LBRC",
+      "matrix": {
+        "row": 2,
+        "column": 11
+      },
+      "ledIndex": 52,
+      "bindable": true,
+      "unit": {
+        "x": 11.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.511111,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c12",
+      "kind": "key",
+      "label": "]",
+      "code": "KC_RBRC",
+      "matrix": {
+        "row": 2,
+        "column": 12
+      },
+      "ledIndex": 53,
+      "bindable": true,
+      "unit": {
+        "x": 12.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.555556,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c13",
+      "kind": "key",
+      "label": "\\",
+      "code": "KC_BSLS",
+      "matrix": {
+        "row": 2,
+        "column": 13
+      },
+      "ledIndex": 54,
+      "bindable": true,
+      "unit": {
+        "x": 13.5,
+        "y": 2.25,
+        "width": 1.5,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.6,
+        "y": 0.36,
+        "width": 0.066667,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c14",
+      "kind": "key",
+      "label": "Del",
+      "code": "KC_DEL",
+      "matrix": {
+        "row": 2,
+        "column": 14
+      },
+      "ledIndex": 55,
+      "bindable": true,
+      "unit": {
+        "x": 15.25,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.677778,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c15",
+      "kind": "key",
+      "label": "End",
+      "code": "KC_END",
+      "matrix": {
+        "row": 2,
+        "column": 15
+      },
+      "ledIndex": 56,
+      "bindable": true,
+      "unit": {
+        "x": 16.25,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.722222,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c16",
+      "kind": "key",
+      "label": "PgDn",
+      "code": "KC_PGDN",
+      "matrix": {
+        "row": 2,
+        "column": 16
+      },
+      "ledIndex": 57,
+      "bindable": true,
+      "unit": {
+        "x": 17.25,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.766667,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c17",
+      "kind": "key",
+      "label": "7",
+      "code": "KC_P7",
+      "matrix": {
+        "row": 2,
+        "column": 17
+      },
+      "ledIndex": 58,
+      "bindable": true,
+      "unit": {
+        "x": 18.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.822222,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c18",
+      "kind": "key",
+      "label": "8",
+      "code": "KC_P8",
+      "matrix": {
+        "row": 2,
+        "column": 18
+      },
+      "ledIndex": 59,
+      "bindable": true,
+      "unit": {
+        "x": 19.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.866667,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c19",
+      "kind": "key",
+      "label": "9",
+      "code": "KC_P9",
+      "matrix": {
+        "row": 2,
+        "column": 19
+      },
+      "ledIndex": 60,
+      "bindable": true,
+      "unit": {
+        "x": 20.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.911111,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r2c20",
+      "kind": "key",
+      "label": "+",
+      "code": "KC_PPLS",
+      "matrix": {
+        "row": 2,
+        "column": 20
+      },
+      "ledIndex": 61,
+      "bindable": true,
+      "unit": {
+        "x": 21.5,
+        "y": 2.25,
+        "width": 1,
+        "height": 2
+      },
+      "frame": {
+        "x": 0.955556,
+        "y": 0.36,
+        "width": 0.044444,
+        "height": 0.32
+      }
+    },
+    {
+      "id": "r3c0",
+      "kind": "key",
+      "label": "Caps",
+      "code": "KC_CAPS",
+      "matrix": {
+        "row": 3,
+        "column": 0
+      },
+      "ledIndex": 62,
+      "bindable": true,
+      "unit": {
+        "x": 0,
+        "y": 3.25,
+        "width": 1.75,
+        "height": 1
+      },
+      "frame": {
+        "x": 0,
+        "y": 0.52,
+        "width": 0.077778,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c1",
+      "kind": "key",
+      "label": "A",
+      "code": "KC_A",
+      "matrix": {
+        "row": 3,
+        "column": 1
+      },
+      "ledIndex": 63,
+      "bindable": true,
+      "unit": {
+        "x": 1.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.077778,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c2",
+      "kind": "key",
+      "label": "S",
+      "code": "KC_S",
+      "matrix": {
+        "row": 3,
+        "column": 2
+      },
+      "ledIndex": 64,
+      "bindable": true,
+      "unit": {
+        "x": 2.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.122222,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c3",
+      "kind": "key",
+      "label": "D",
+      "code": "KC_D",
+      "matrix": {
+        "row": 3,
+        "column": 3
+      },
+      "ledIndex": 65,
+      "bindable": true,
+      "unit": {
+        "x": 3.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.166667,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c4",
+      "kind": "key",
+      "label": "F",
+      "code": "KC_F",
+      "matrix": {
+        "row": 3,
+        "column": 4
+      },
+      "ledIndex": 66,
+      "bindable": true,
+      "unit": {
+        "x": 4.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.211111,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c5",
+      "kind": "key",
+      "label": "G",
+      "code": "KC_G",
+      "matrix": {
+        "row": 3,
+        "column": 5
+      },
+      "ledIndex": 67,
+      "bindable": true,
+      "unit": {
+        "x": 5.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.255556,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c6",
+      "kind": "key",
+      "label": "H",
+      "code": "KC_H",
+      "matrix": {
+        "row": 3,
+        "column": 6
+      },
+      "ledIndex": 68,
+      "bindable": true,
+      "unit": {
+        "x": 6.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.3,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c7",
+      "kind": "key",
+      "label": "J",
+      "code": "KC_J",
+      "matrix": {
+        "row": 3,
+        "column": 7
+      },
+      "ledIndex": 69,
+      "bindable": true,
+      "unit": {
+        "x": 7.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.344444,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c8",
+      "kind": "key",
+      "label": "K",
+      "code": "KC_K",
+      "matrix": {
+        "row": 3,
+        "column": 8
+      },
+      "ledIndex": 70,
+      "bindable": true,
+      "unit": {
+        "x": 8.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.388889,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c9",
+      "kind": "key",
+      "label": "L",
+      "code": "KC_L",
+      "matrix": {
+        "row": 3,
+        "column": 9
+      },
+      "ledIndex": 71,
+      "bindable": true,
+      "unit": {
+        "x": 9.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.433333,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c10",
+      "kind": "key",
+      "label": ";",
+      "code": "KC_SCLN",
+      "matrix": {
+        "row": 3,
+        "column": 10
+      },
+      "ledIndex": 72,
+      "bindable": true,
+      "unit": {
+        "x": 10.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.477778,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c11",
+      "kind": "key",
+      "label": "Quote",
+      "code": "KC_QUOT",
+      "matrix": {
+        "row": 3,
+        "column": 11
+      },
+      "ledIndex": 73,
+      "bindable": true,
+      "unit": {
+        "x": 11.75,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.522222,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c13",
+      "kind": "key",
+      "label": "Return",
+      "code": "KC_ENT",
+      "matrix": {
+        "row": 3,
+        "column": 13
+      },
+      "ledIndex": 74,
+      "bindable": true,
+      "unit": {
+        "x": 12.75,
+        "y": 3.25,
+        "width": 2.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.566667,
+        "y": 0.52,
+        "width": 0.1,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c17",
+      "kind": "key",
+      "label": "4",
+      "code": "KC_P4",
+      "matrix": {
+        "row": 3,
+        "column": 17
+      },
+      "ledIndex": 75,
+      "bindable": true,
+      "unit": {
+        "x": 18.5,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.822222,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c18",
+      "kind": "key",
+      "label": "5",
+      "code": "KC_P5",
+      "matrix": {
+        "row": 3,
+        "column": 18
+      },
+      "ledIndex": 76,
+      "bindable": true,
+      "unit": {
+        "x": 19.5,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.866667,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r3c19",
+      "kind": "key",
+      "label": "6",
+      "code": "KC_P6",
+      "matrix": {
+        "row": 3,
+        "column": 19
+      },
+      "ledIndex": 77,
+      "bindable": true,
+      "unit": {
+        "x": 20.5,
+        "y": 3.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.911111,
+        "y": 0.52,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c0",
+      "kind": "key",
+      "label": "Shift",
+      "code": "KC_LSFT",
+      "matrix": {
+        "row": 4,
+        "column": 0
+      },
+      "ledIndex": 78,
+      "bindable": true,
+      "unit": {
+        "x": 0,
+        "y": 4.25,
+        "width": 2.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0,
+        "y": 0.68,
+        "width": 0.1,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c2",
+      "kind": "key",
+      "label": "Z",
+      "code": "KC_Z",
+      "matrix": {
+        "row": 4,
+        "column": 2
+      },
+      "ledIndex": 79,
+      "bindable": true,
+      "unit": {
+        "x": 2.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.1,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c3",
+      "kind": "key",
+      "label": "X",
+      "code": "KC_X",
+      "matrix": {
+        "row": 4,
+        "column": 3
+      },
+      "ledIndex": 80,
+      "bindable": true,
+      "unit": {
+        "x": 3.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.144444,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c4",
+      "kind": "key",
+      "label": "C",
+      "code": "KC_C",
+      "matrix": {
+        "row": 4,
+        "column": 4
+      },
+      "ledIndex": 81,
+      "bindable": true,
+      "unit": {
+        "x": 4.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.188889,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c5",
+      "kind": "key",
+      "label": "V",
+      "code": "KC_V",
+      "matrix": {
+        "row": 4,
+        "column": 5
+      },
+      "ledIndex": 82,
+      "bindable": true,
+      "unit": {
+        "x": 5.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.233333,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c6",
+      "kind": "key",
+      "label": "B",
+      "code": "KC_B",
+      "matrix": {
+        "row": 4,
+        "column": 6
+      },
+      "ledIndex": 83,
+      "bindable": true,
+      "unit": {
+        "x": 6.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.277778,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c7",
+      "kind": "key",
+      "label": "N",
+      "code": "KC_N",
+      "matrix": {
+        "row": 4,
+        "column": 7
+      },
+      "ledIndex": 84,
+      "bindable": true,
+      "unit": {
+        "x": 7.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.322222,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c8",
+      "kind": "key",
+      "label": "M",
+      "code": "KC_M",
+      "matrix": {
+        "row": 4,
+        "column": 8
+      },
+      "ledIndex": 85,
+      "bindable": true,
+      "unit": {
+        "x": 8.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.366667,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c9",
+      "kind": "key",
+      "label": ",",
+      "code": "KC_COMM",
+      "matrix": {
+        "row": 4,
+        "column": 9
+      },
+      "ledIndex": 86,
+      "bindable": true,
+      "unit": {
+        "x": 9.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.411111,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c10",
+      "kind": "key",
+      "label": ".",
+      "code": "KC_DOT",
+      "matrix": {
+        "row": 4,
+        "column": 10
+      },
+      "ledIndex": 87,
+      "bindable": true,
+      "unit": {
+        "x": 10.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.455556,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c11",
+      "kind": "key",
+      "label": "/",
+      "code": "KC_SLSH",
+      "matrix": {
+        "row": 4,
+        "column": 11
+      },
+      "ledIndex": 88,
+      "bindable": true,
+      "unit": {
+        "x": 11.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.5,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c13",
+      "kind": "key",
+      "label": "Shift",
+      "code": "KC_RSFT",
+      "matrix": {
+        "row": 4,
+        "column": 13
+      },
+      "ledIndex": 89,
+      "bindable": true,
+      "unit": {
+        "x": 12.25,
+        "y": 4.25,
+        "width": 2.75,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.544444,
+        "y": 0.68,
+        "width": 0.122222,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c15",
+      "kind": "key",
+      "label": "UP",
+      "code": "KC_UP",
+      "matrix": {
+        "row": 4,
+        "column": 15
+      },
+      "ledIndex": 90,
+      "bindable": true,
+      "unit": {
+        "x": 16.25,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.722222,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c17",
+      "kind": "key",
+      "label": "1",
+      "code": "KC_P1",
+      "matrix": {
+        "row": 4,
+        "column": 17
+      },
+      "ledIndex": 91,
+      "bindable": true,
+      "unit": {
+        "x": 18.5,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.822222,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c18",
+      "kind": "key",
+      "label": "2",
+      "code": "KC_P2",
+      "matrix": {
+        "row": 4,
+        "column": 18
+      },
+      "ledIndex": 92,
+      "bindable": true,
+      "unit": {
+        "x": 19.5,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.866667,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c19",
+      "kind": "key",
+      "label": "3",
+      "code": "KC_P3",
+      "matrix": {
+        "row": 4,
+        "column": 19
+      },
+      "ledIndex": 93,
+      "bindable": true,
+      "unit": {
+        "x": 20.5,
+        "y": 4.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.911111,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r4c20",
+      "kind": "key",
+      "label": "Enter",
+      "code": "KC_PENT",
+      "matrix": {
+        "row": 4,
+        "column": 20
+      },
+      "ledIndex": 94,
+      "bindable": true,
+      "unit": {
+        "x": 21.5,
+        "y": 4.25,
+        "width": 1,
+        "height": 2
+      },
+      "frame": {
+        "x": 0.955556,
+        "y": 0.68,
+        "width": 0.044444,
+        "height": 0.32
+      }
+    },
+    {
+      "id": "r5c0",
+      "kind": "key",
+      "label": "Ctrl",
+      "code": "KC_LCTL",
+      "matrix": {
+        "row": 5,
+        "column": 0
+      },
+      "ledIndex": 95,
+      "bindable": true,
+      "unit": {
+        "x": 0,
+        "y": 5.25,
+        "width": 1.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0,
+        "y": 0.84,
+        "width": 0.055556,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c1",
+      "kind": "key",
+      "label": "Option",
+      "code": "KC_LOPTN",
+      "matrix": {
+        "row": 5,
+        "column": 1
+      },
+      "ledIndex": 96,
+      "bindable": true,
+      "unit": {
+        "x": 1.25,
+        "y": 5.25,
+        "width": 1.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.055556,
+        "y": 0.84,
+        "width": 0.055556,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c2",
+      "kind": "key",
+      "label": "Command",
+      "code": "KC_LCMMD",
+      "matrix": {
+        "row": 5,
+        "column": 2
+      },
+      "ledIndex": 97,
+      "bindable": true,
+      "unit": {
+        "x": 2.5,
+        "y": 5.25,
+        "width": 1.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.111111,
+        "y": 0.84,
+        "width": 0.055556,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c6",
+      "kind": "key",
+      "label": "Space",
+      "code": "KC_SPC",
+      "matrix": {
+        "row": 5,
+        "column": 6
+      },
+      "ledIndex": 98,
+      "bindable": true,
+      "unit": {
+        "x": 3.75,
+        "y": 5.25,
+        "width": 6.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.166667,
+        "y": 0.84,
+        "width": 0.277778,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c10",
+      "kind": "key",
+      "label": "Command",
+      "code": "KC_RCMMD",
+      "matrix": {
+        "row": 5,
+        "column": 10
+      },
+      "ledIndex": 99,
+      "bindable": true,
+      "unit": {
+        "x": 10,
+        "y": 5.25,
+        "width": 1.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.444444,
+        "y": 0.84,
+        "width": 0.055556,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c11",
+      "kind": "key",
+      "label": "Option",
+      "code": "KC_ROPTN",
+      "matrix": {
+        "row": 5,
+        "column": 11
+      },
+      "ledIndex": 100,
+      "bindable": true,
+      "unit": {
+        "x": 11.25,
+        "y": 5.25,
+        "width": 1.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.5,
+        "y": 0.84,
+        "width": 0.055556,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c12",
+      "kind": "key",
+      "label": "Fn",
+      "code": "MO(MAC_FN)",
+      "matrix": {
+        "row": 5,
+        "column": 12
+      },
+      "ledIndex": 101,
+      "bindable": true,
+      "unit": {
+        "x": 12.5,
+        "y": 5.25,
+        "width": 1.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.555556,
+        "y": 0.84,
+        "width": 0.055556,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c13",
+      "kind": "key",
+      "label": "Ctrl",
+      "code": "KC_RCTL",
+      "matrix": {
+        "row": 5,
+        "column": 13
+      },
+      "ledIndex": 102,
+      "bindable": true,
+      "unit": {
+        "x": 13.75,
+        "y": 5.25,
+        "width": 1.25,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.611111,
+        "y": 0.84,
+        "width": 0.055556,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c14",
+      "kind": "key",
+      "label": "Left",
+      "code": "KC_LEFT",
+      "matrix": {
+        "row": 5,
+        "column": 14
+      },
+      "ledIndex": 103,
+      "bindable": true,
+      "unit": {
+        "x": 15.25,
+        "y": 5.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.677778,
+        "y": 0.84,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c15",
+      "kind": "key",
+      "label": "Down",
+      "code": "KC_DOWN",
+      "matrix": {
+        "row": 5,
+        "column": 15
+      },
+      "ledIndex": 104,
+      "bindable": true,
+      "unit": {
+        "x": 16.25,
+        "y": 5.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.722222,
+        "y": 0.84,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c16",
+      "kind": "key",
+      "label": "Right",
+      "code": "KC_RGHT",
+      "matrix": {
+        "row": 5,
+        "column": 16
+      },
+      "ledIndex": 105,
+      "bindable": true,
+      "unit": {
+        "x": 17.25,
+        "y": 5.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.766667,
+        "y": 0.84,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c18",
+      "kind": "key",
+      "label": "0",
+      "code": "KC_P0",
+      "matrix": {
+        "row": 5,
+        "column": 18
+      },
+      "ledIndex": 106,
+      "bindable": true,
+      "unit": {
+        "x": 18.5,
+        "y": 5.25,
+        "width": 2,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.822222,
+        "y": 0.84,
+        "width": 0.088889,
+        "height": 0.16
+      }
+    },
+    {
+      "id": "r5c19",
+      "kind": "key",
+      "label": ".",
+      "code": "KC_PDOT",
+      "matrix": {
+        "row": 5,
+        "column": 19
+      },
+      "ledIndex": 107,
+      "bindable": true,
+      "unit": {
+        "x": 20.5,
+        "y": 5.25,
+        "width": 1,
+        "height": 1
+      },
+      "frame": {
+        "x": 0.911111,
+        "y": 0.84,
+        "width": 0.044444,
+        "height": 0.16
+      }
+    }
+  ],
+  "encoder": {
+    "id": "encoder-0",
+    "kind": "encoder",
+    "label": "Reasoning",
+    "index": 0,
+    "pressControlId": "r0c13",
+    "bindable": true,
+    "ledIndex": null,
+    "unit": {
+      "x": 14,
+      "y": 0,
+      "width": 1,
+      "height": 1
+    },
+    "frame": {
+      "x": 0.622222,
+      "y": 0,
+      "width": 0.044444,
+      "height": 0.16
+    }
+  },
+  "characterMap": {
+    "0": 30,
+    "1": 21,
+    "2": 22,
+    "3": 23,
+    "4": 24,
+    "5": 25,
+    "6": 26,
+    "7": 27,
+    "8": 28,
+    "9": 29,
+    "`": 20,
+    "-": 31,
+    "=": 32,
+    "q": 42,
+    "w": 43,
+    "e": 44,
+    "r": 45,
+    "t": 46,
+    "y": 47,
+    "u": 48,
+    "i": 49,
+    "o": 50,
+    "p": 51,
+    "[": 52,
+    "]": 53,
+    "\\": 54,
+    "a": 63,
+    "s": 64,
+    "d": 65,
+    "f": 66,
+    "g": 67,
+    "h": 68,
+    "j": 69,
+    "k": 70,
+    "l": 71,
+    ";": 72,
+    "'": 73,
+    "\n": 74,
+    "z": 79,
+    "x": 80,
+    "c": 81,
+    "v": 82,
+    "b": 83,
+    "n": 84,
+    "m": 85,
+    ",": 86,
+    ".": 87,
+    "/": 88,
+    " ": 98
+  },
+  "randomKeys": [
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    63,
+    64,
+    65,
+    66,
+    67,
+    68,
+    69,
+    70,
+    71,
+    72,
+    73,
+    74,
+    79,
+    80,
+    81,
+    82,
+    83,
+    84,
+    85,
+    86,
+    87,
+    88,
+    98
+  ]
+}

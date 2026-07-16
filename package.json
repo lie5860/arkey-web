@@ -1,0 +1,23 @@
+{
+  "name": "arkey",
+  "version": "0.1.0",
+  "description": "Unofficial Codex command surface and agent-state lighting for QMK keyboards",
+  "type": "module",
+  "bin": { "arkey": "dist/src/cli.js" },
+  "files": ["dist/src", "profiles", "firmware", "docs", "LICENSE", "LICENSES", "README.md", "THIRD_PARTY_NOTICES.md", "TRADEMARKS.md"],
+  "scripts": {
+    "generate:firmware-contract": "node scripts/generate-firmware-contract.mjs",
+    "check:firmware-contract": "node scripts/generate-firmware-contract.mjs --check",
+    "audit:release": "./scripts/audit-release.sh",
+    "build": "tsc -p tsconfig.json",
+    "lint": "npm run check:firmware-contract && tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "check": "npm run audit:release && npm run lint && npm test"
+  },
+  "engines": { "node": ">=20" },
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": { "type": "git", "url": "git+https://github.com/shuhari04/arkey.git" },
+  "keywords": ["qmk", "rgb", "codex", "keyboard", "raw-hid", "macos"],
+  "dependencies": { "node-hid": "^3.2.0" },
+  "devDependencies": { "@types/node": "^22.15.0", "typescript": "^5.8.3" }
+}
