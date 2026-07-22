@@ -216,12 +216,6 @@ export function App() {
     event.preventDefault();
     sendEvent(event.deltaY < 0 ? "encoder-cw" : "encoder-ccw", "tap");
   };
-  const joystick = (control: HardwareControl) => ({
-    onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => pointerDown(event, control),
-    onPointerUp: () => release(control),
-    onPointerCancel: () => release(control),
-  });
-
   return (
     <main className="app-shell">
       <section className="workspace">
@@ -231,7 +225,7 @@ export function App() {
               className="reasoning-module has-tooltip"
               type="button"
               aria-label="推理旋钮；按下发送旋钮按键，滚动发送旋转事件"
-              data-tooltip="REASONING\n按下或滚动"
+              data-tooltip={"REASONING\n按下或滚动"}
               disabled={disabled}
               onPointerDown={(event) => pointerDown(event, "reasoning-press")}
               onPointerUp={() => release("reasoning-press")}
@@ -255,12 +249,12 @@ export function App() {
               ><span className="agent-light" /></KeyboardKey>
             ))}
 
-            <div className="joystick-module has-tooltip" aria-label="工作流摇杆" data-tooltip="WORKFLOW\n向四个方向拨动">
-              <button type="button" aria-label="摇杆向上" disabled={disabled} {...joystick("joystick-up")}><ArrowUp /></button>
-              <button type="button" aria-label="摇杆向左" disabled={disabled} {...joystick("joystick-left")}><ArrowLeft /></button>
+            <div className="joystick-module has-tooltip" aria-label="工作流摇杆，待开发" aria-disabled="true" data-tooltip={"WORKFLOW\n待开发"}>
+              <button type="button" aria-label="摇杆向上，待开发" disabled><ArrowUp /></button>
+              <button type="button" aria-label="摇杆向左，待开发" disabled><ArrowLeft /></button>
               <span className="joystick-center" />
-              <button type="button" aria-label="摇杆向右" disabled={disabled} {...joystick("joystick-right")}><ArrowRight /></button>
-              <button type="button" aria-label="摇杆向下" disabled={disabled} {...joystick("joystick-down")}><ArrowDown /></button>
+              <button type="button" aria-label="摇杆向右，待开发" disabled><ArrowRight /></button>
+              <button type="button" aria-label="摇杆向下，待开发" disabled><ArrowDown /></button>
             </div>
 
             {[2, 3, 4, 5].map((slot) => (
@@ -299,12 +293,9 @@ export function App() {
             <button
               className="ptt-key has-tooltip"
               type="button"
-              aria-label="按住说话"
-              data-tooltip="MIC\n按住说话"
-              disabled={disabled}
-              onPointerDown={(event) => pointerDown(event, "ptt")}
-              onPointerUp={() => release("ptt")}
-              onPointerCancel={() => release("ptt")}
+              aria-label="语音按钮，待开发"
+              data-tooltip={"MIC\n待开发"}
+              disabled
             ><Microphone weight="bold" /></button>
             <KeyboardKey label="CODEX" hint="发送" control="send" disabled={disabled} className="dark-key" onPress={press} onRelease={release}><OpenAiLogo /></KeyboardKey>
           </div>
