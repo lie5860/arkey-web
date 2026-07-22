@@ -79,4 +79,4 @@ Rust 版本完成并验证以前，最小 Node 桥属于运行必需部分。
 
 ## 社区致谢
 
-感谢 [LINUX DO](https://linux.do/) 社区对本项目的认可与支持。
+Learn AI on LinuxDO — [LinuxDO](https://linux.do/)
