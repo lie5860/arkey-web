@@ -12,7 +12,7 @@ impl CodexFocus {
     }
 
     pub fn available(&self) -> bool {
-        cfg!(target_os = "macos")
+        cfg!(any(target_os = "macos", target_os = "windows"))
     }
 
     pub fn enabled(&self) -> bool {
@@ -156,14 +156,132 @@ mod platform {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+mod platform {
+    use std::path::Path;
+    use windows::core::{BOOL, PWSTR};
+    use windows::Win32::Foundation::{CloseHandle, HWND, LPARAM};
+    use windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, EnumWindows, GetWindowThreadProcessId, IsIconic, IsWindowVisible,
+        SetForegroundWindow, ShowWindowAsync, SW_RESTORE,
+    };
+
+    pub fn accessibility_granted(_prompt: bool) -> bool {
+        true
+    }
+
+    pub fn focus_codex() -> Result<(), String> {
+        let mut codex_window = None;
+        unsafe {
+            EnumWindows(
+                Some(find_codex_window),
+                LPARAM((&mut codex_window as *mut Option<HWND>) as isize),
+            )
+            .map_err(|error| format!("枚举桌面窗口失败：{error}"))?;
+        }
+
+        let Some(window) = codex_window else {
+            return Err("Codex Desktop 未运行或没有可见窗口".to_owned());
+        };
+
+        unsafe {
+            if IsIconic(window).as_bool() {
+                let _ = ShowWindowAsync(window, SW_RESTORE);
+            }
+            let _ = BringWindowToTop(window);
+            if !SetForegroundWindow(window).as_bool() {
+                return Err("Windows 未允许激活 Codex Desktop".to_owned());
+            }
+        }
+        Ok(())
+    }
+
+    unsafe extern "system" fn find_codex_window(window: HWND, state: LPARAM) -> BOOL {
+        let result = unsafe { &mut *(state.0 as *mut Option<HWND>) };
+        if result.is_none()
+            && unsafe { IsWindowVisible(window).as_bool() }
+            && is_codex_window(window)
+        {
+            *result = Some(window);
+        }
+        BOOL(1)
+    }
+
+    fn is_codex_window(window: HWND) -> bool {
+        let mut process_id = 0;
+        unsafe { GetWindowThreadProcessId(window, Some(&mut process_id)) };
+        process_id != 0
+            && process_image_path(process_id)
+                .as_deref()
+                .is_some_and(is_codex_desktop_executable)
+    }
+
+    fn process_image_path(process_id: u32) -> Option<String> {
+        let process =
+            unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).ok()? };
+        let mut path = vec![0_u16; 32_768];
+        let mut length = path.len() as u32;
+        let result = unsafe {
+            QueryFullProcessImageNameW(
+                process,
+                PROCESS_NAME_WIN32,
+                PWSTR(path.as_mut_ptr()),
+                &mut length,
+            )
+        };
+        let _ = unsafe { CloseHandle(process) };
+        result.ok()?;
+        String::from_utf16(&path[..length as usize]).ok()
+    }
+
+    fn is_codex_desktop_executable(path: &str) -> bool {
+        let normalized = path.replace('/', "\\").to_ascii_lowercase();
+        let file_name = Path::new(&normalized)
+            .file_name()
+            .and_then(|name| name.to_str());
+        let supported_executable = matches!(file_name, Some("chatgpt.exe" | "codex.exe"));
+        supported_executable
+            && (normalized.contains("\\openai.codex_")
+                || normalized.contains("\\openai\\codex\\")
+                || normalized.contains("\\codex\\"))
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::is_codex_desktop_executable;
+
+        #[test]
+        fn recognizes_the_packaged_codex_desktop_host() {
+            assert!(is_codex_desktop_executable(
+                r"C:\Program Files\WindowsApps\OpenAI.Codex_1.0_x64__test\app\ChatGPT.exe"
+            ));
+            assert!(is_codex_desktop_executable(
+                r"C:\Users\test\AppData\Local\OpenAI\Codex\Codex.exe"
+            ));
+        }
+
+        #[test]
+        fn rejects_unrelated_chatgpt_and_codex_processes() {
+            assert!(!is_codex_desktop_executable(
+                r"C:\Program Files\WindowsApps\OpenAI.ChatGPT_1.0_x64__test\app\ChatGPT.exe"
+            ));
+            assert!(!is_codex_desktop_executable(r"C:\tools\codex.exe"));
+        }
+    }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 mod platform {
     pub fn accessibility_granted(_prompt: bool) -> bool {
         false
     }
 
     pub fn focus_codex() -> Result<(), String> {
-        Err("此功能仅支持 macOS".to_owned())
+        Err("此功能仅支持 macOS 和 Windows".to_owned())
     }
 }
 

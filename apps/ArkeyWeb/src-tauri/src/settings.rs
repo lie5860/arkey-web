@@ -133,6 +133,11 @@ pub fn write(path: &Path, settings: &Settings) -> Result<(), String> {
 mod tests {
     use super::*;
 
+    #[cfg(windows)]
+    const VALID_PORT: &str = "COM7";
+    #[cfg(not(windows))]
+    const VALID_PORT: &str = "/dev/cu.usbmodem-test";
+
     #[test]
     fn reads_only_the_existing_port_setting() {
         let unique = format!("arkey-settings-{}-{}.json", std::process::id(), 17);
@@ -185,7 +190,7 @@ mod tests {
         let unique = format!("arkey-settings-{}-{}.json", std::process::id(), 19);
         let path = std::env::temp_dir().join(unique);
         let expected = Settings {
-            micro_bridge_port: "/dev/test".to_owned(),
+            micro_bridge_port: VALID_PORT.to_owned(),
             always_on_top: true,
             focus_codex_on_input: true,
         };
@@ -197,7 +202,7 @@ mod tests {
     #[test]
     fn rejects_relative_serial_paths() {
         assert!(validate_port("").is_ok());
-        assert!(validate_port("/dev/cu.usbmodem-test").is_ok());
+        assert!(validate_port(VALID_PORT).is_ok());
         assert!(validate_port("relative/device").is_err());
     }
 }

@@ -445,7 +445,7 @@ async fn set_focus_codex_on_input(
         );
     }
     if !state.codex_focus.available() {
-        return error(StatusCode::BAD_REQUEST, "此功能仅支持 macOS");
+        return error(StatusCode::BAD_REQUEST, "此功能仅支持 macOS 和 Windows");
     }
     let body = match parse_json::<FocusCodexBody>(&headers, &body) {
         Ok(body) => body,

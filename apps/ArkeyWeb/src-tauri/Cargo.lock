@@ -65,6 +65,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-single-instance",
  "tokio",
+ "windows",
 ]
 
 [[package]]
