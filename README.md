@@ -11,6 +11,12 @@ Codex Desktop → ESP32-S3 native USB HID → 六槽灯光状态 → Web
 
 当前固件版本是 `0.1.6-arkey-esp32s3-lab`。这次版本把不稳定的 `stdin/stdout` 控制台传输替换为固件独占的、带 RX/TX 缓冲的 UART0 驱动。
 
+## 项目来源与致谢
+
+Arkey Web 是基于 [shuhari04/arkey](https://github.com/shuhari04/arkey) 继续开发的派生项目，并非从零开始。感谢原作者公开 Arkey 以及其中的 Codex Micro Lab 研究与实现；本项目继承并改造了上游对当前 Codex Micro 实验兼容面的理解，包括 native HID report、固定控制语义和六个 Agent 槽位状态。
+
+本分支将上游的 QMK/Keychron 实验路径改造成独立 ESP32-S3 开发板，并用 React Web 控制面和本机 Node 串口桥取代原来的 macOS 客户端与 App Server 主链路。为保持项目目标清晰，当前仓库不再包含上游的 QMK 固件、Swift 客户端或 Codex App Server daemon；需要这些能力时，请直接查看[原始 Arkey 项目](https://github.com/shuhari04/arkey)。详细继承边界和许可说明见[第三方通知](docs/legal/THIRD_PARTY_NOTICES.md)。
+
 > [!WARNING]
 > 本项目是非官方、仅用于自有硬件互操作研究的实验。固件会呈现当前实验观察到的 USB 身份和 HID 行为；它不是 OpenAI 或 Work Louder 支持的接口，Desktop 更新后可能失效。不要销售或把写入该固件的设备描述成官方 Codex Micro。
 
@@ -22,6 +28,7 @@ Codex Desktop → ESP32-S3 native USB HID → 六槽灯光状态 → Web
 - `src/microbridge.ts`：Web 与开发板之间的最小 USB-UART 桥。
 - `src/webserver.ts`：只监听 `127.0.0.1` 的静态服务和硬件 API。
 - `apps/ArkeyWeb`：只有实体键盘控制面与串口设置。
+- `docs/ARCHITECTURE.md`：当前 Web、Node、UART 与 native USB 的组件边界。
 - `docs/FIRMWARE.md`：备份、构建、版本核对、手动写入和恢复说明。
 
 仓库不再包含 QMK、Keychron 固件、Codex App Server daemon、macOS Swift 客户端、Virtual Lab 或 GitHub CI。
@@ -68,4 +75,4 @@ Rust 版本完成并验证以前，最小 Node 桥属于运行必需部分。
 
 ## 许可
 
-项目是独立、非官方、非商业用途的实验。根目录代码按 [PolyForm Noncommercial 1.0.0](LICENSE) 提供；固件文件保留其 SPDX 文件级许可。第三方名称和通知见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 与 [TRADEMARKS.md](TRADEMARKS.md)。
+项目是独立、非官方、非商业用途的实验。根目录代码按 [PolyForm Noncommercial 1.0.0](LICENSE) 提供；固件文件保留其 SPDX 文件级许可。上游及第三方通知见[第三方通知](docs/legal/THIRD_PARTY_NOTICES.md)，名称使用边界见[商标说明](docs/legal/TRADEMARKS.md)。参与开发前请阅读[贡献指南](docs/CONTRIBUTING.md)；安全问题请按[安全策略](docs/SECURITY.md)报告。

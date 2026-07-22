@@ -13,14 +13,17 @@ Required Notice: Copyright 2026 shuhari04.
    and other components under their own licenses. Distributors are responsible
    for all corresponding-source and notice obligations.
 
-3. Third-party dependencies retain their own licenses. See
-   THIRD_PARTY_NOTICES.md and the dependency lockfiles.
+3. This repository is derived from https://github.com/shuhari04/arkey and
+   retains its required notice and applicable file-level licenses. Third-party
+   dependencies retain their own licenses. See
+   docs/legal/THIRD_PARTY_NOTICES.md and the dependency lockfiles.
 
 4. No license in this repository grants permission to use a third party's
    trademark, USB VID/PID assignment, device identity, certification, private
    SDK, service entitlement, or commercial product representation. The Codex
    Micro compatibility behavior is an isolated development/test experiment and
-   does not imply authorization or endorsement by OpenAI or Work Louder.
+   does not imply authorization or endorsement by OpenAI or Work Louder. See
+   docs/legal/TRADEMARKS.md for the project-name and third-party-name boundary.
 
 File-level SPDX identifiers and upstream notices control if they conflict with
 this scope map. This file does not replace the full license texts in LICENSES/.

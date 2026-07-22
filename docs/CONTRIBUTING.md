@@ -1,6 +1,6 @@
 # Contributing
 
-Keep changes inside the narrow Web → UART → ESP32-S3 → native USB HID chain described in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Keep changes inside the narrow Web → UART → ESP32-S3 → native USB HID chain described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Before submitting a change:
 
@@ -16,3 +16,4 @@ npm run firmware:build
 ```
 
 Report build-only and physical results separately. Never include firmware binaries, flash backups, local device paths, Codex data, screenshots containing private content, or credentials in a commit.
+
