@@ -15,7 +15,7 @@ done
 
 if [ "$acknowledged" != true ]; then
     echo "This laboratory build contains a Codex Micro compatibility USB identity." >&2
-    echo "Review docs/CODEX_MICRO_ESP32S3_LAB.md, then re-run with --acknowledge-device-identity-test." >&2
+    echo "Review docs/FIRMWARE.md, then re-run with --acknowledge-device-identity-test." >&2
     exit 2
 fi
 

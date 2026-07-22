@@ -1,52 +1,26 @@
-Arkey is a multi-license repository.
+Arkey Web is a multi-license repository.
 
 Required Notice: Copyright 2026 shuhari04.
 
-1. Except where a file or directory says otherwise, the original Arkey software,
-   profiles, scripts, documentation, tests, and CI configuration are licensed
-   under the PolyForm Noncommercial License 1.0.0 in
-   LICENSES/PolyForm-Noncommercial-1.0.0.txt. This includes the macOS Codex
-   Micro Lab client/configuration views, the Report ID 0x07 configuration tools
-   and format, and their tests. These first-party components are provided only
-   for uses permitted by that noncommercial license.
+1. Except where a file says otherwise, the Web application, Node bridge,
+   scripts, documentation, and tests are licensed under the PolyForm
+   Noncommercial License 1.0.0 in
+   LICENSES/PolyForm-Noncommercial-1.0.0.txt.
 
-2. The QMK and Keychron firmware integration under firmware/ is a mixed-license
-   aggregation:
-
-   - firmware/keychron-q6-pro.patch is licensed under GPL-2.0-only because it is
-     a patch to GPL-covered Keychron/QMK source files.
-   - firmware/codex-micro-lab-q6-pro.patch,
-     firmware/codex-micro-lab-qmk-hid.patch, and
-     firmware/codex-micro-lab-qmk-encoder.patch modify GPL-covered
-     Keychron/QMK source files and are licensed under GPL-2.0-only or the
-     controlling compatible upstream file license.
-   - firmware/qmk/arkey.c, firmware/qmk/arkey.h,
-     firmware/qmk/arkey_generated.h, and firmware/qmk/rgb_matrix_kb.inc are
-     licensed under the MIT License, as indicated by their SPDX headers.
-   - firmware/qmk/codex_micro_lab.c and
-     firmware/qmk/codex_micro_lab.h are licensed under GPL-2.0-or-later, as
-     indicated by their SPDX headers.
-   - The firmware produced by applying these changes to Keychron/QMK remains
-     subject to all applicable upstream and file-level licenses. Distributors
-     are responsible for the corresponding-source and notice obligations of
-     the complete resulting firmware, including any GPLv3-covered components
-     present in the selected ARM/QMK build.
-
-   The PolyForm noncommercial restriction does not apply to firmware/.
+2. The files below firmware/esp32s3-codex-micro-lab are licensed under the
+   SPDX identifier in each file. The current firmware sources use
+   GPL-2.0-or-later. Generated firmware also includes ESP-IDF, TinyUSB, cJSON,
+   and other components under their own licenses. Distributors are responsible
+   for all corresponding-source and notice obligations.
 
 3. Third-party dependencies retain their own licenses. See
    THIRD_PARTY_NOTICES.md and the dependency lockfiles.
 
-4. The Arkey name and logo are not licensed for reuse by the software licenses.
-   See TRADEMARKS.md.
-
-5. No license in this repository grants permission to use a third party's
+4. No license in this repository grants permission to use a third party's
    trademark, USB VID/PID assignment, device identity, certification, private
-   SDK, service entitlement, or commercial product representation. The optional
-   Codex Micro Lab compatibility references are an isolated development/test
-   experiment and do not imply authorization or endorsement by OpenAI or Work
-   Louder.
+   SDK, service entitlement, or commercial product representation. The Codex
+   Micro compatibility behavior is an isolated development/test experiment and
+   does not imply authorization or endorsement by OpenAI or Work Louder.
 
 File-level SPDX identifiers and upstream notices control if they conflict with
-this summary. This file is a scope map, not a replacement for the full license
-texts in LICENSES/.
+this scope map. This file does not replace the full license texts in LICENSES/.

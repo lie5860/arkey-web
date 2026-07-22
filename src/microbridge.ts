@@ -53,6 +53,7 @@ export interface MicroBridgeState {
   enabled: boolean;
   connection: MicroBridgeConnection;
   configuredPort: string;
+  firmwareVersion?: string;
   usbMounted: boolean;
   desktopConnected: boolean;
   slotLights: MicroSlotLight[];
@@ -170,6 +171,7 @@ export async function listMicroBridgePorts(): Promise<MicroBridgePort[]> {
 export class MicroBridgeController {
   private configuredPort: string;
   private connection: MicroBridgeConnection;
+  private firmwareVersion?: string;
   private usbMounted = false;
   private desktopConnected = false;
   private slotLights: MicroSlotLight[] = [];
@@ -200,6 +202,7 @@ export class MicroBridgeController {
       enabled: this.configuredPort.length > 0,
       connection: this.connection,
       configuredPort: this.configuredPort,
+      firmwareVersion: this.firmwareVersion,
       usbMounted: this.usbMounted,
       desktopConnected: this.desktopConnected,
       slotLights: this.slotLights.map((slot) => ({ ...slot })),
@@ -223,6 +226,7 @@ export class MicroBridgeController {
     this.configuredPort = configuredPort;
     this.connection = configuredPort ? "offline" : "disabled";
     this.lastError = undefined;
+    this.firmwareVersion = undefined;
     this.usbMounted = false;
     this.desktopConnected = false;
     this.slotLights = [];
@@ -280,6 +284,7 @@ export class MicroBridgeController {
       if (this.port === port) this.port = undefined;
       this.rejectPending("ESP32-S3 串口已断开");
       this.connection = this.configuredPort ? "offline" : "disabled";
+      this.firmwareVersion = undefined;
       this.usbMounted = false;
       this.desktopConnected = false;
     });
@@ -311,6 +316,7 @@ export class MicroBridgeController {
       return;
     }
     if (message.event === "bridge") {
+      this.firmwareVersion = optionalString(message.firmwareVersion, 100);
       this.usbMounted = message.usbMounted === true;
       this.desktopConnected = message.desktopConnected === true;
       return;
@@ -380,6 +386,7 @@ export class MicroBridgeController {
   private handlePortFailure(error: unknown): void {
     this.lastError = error instanceof Error ? error.message.slice(0, 400) : String(error).slice(0, 400);
     this.connection = "error";
+    this.firmwareVersion = undefined;
     this.usbMounted = false;
     this.desktopConnected = false;
   }

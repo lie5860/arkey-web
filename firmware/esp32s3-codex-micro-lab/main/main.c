@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "cJSON.h"
+#include "driver/uart.h"
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -19,7 +20,14 @@
 #define CM_USB_VID 0x303A
 #define CM_USB_PID 0x8360
 #define CM_USB_BCD_DEVICE 0x0100
-#define CM_FIRMWARE_VERSION "0.1.5-arkey-esp32s3-lab"
+#define CM_FIRMWARE_VERSION "0.1.6-arkey-esp32s3-lab"
+#define CM_BRIDGE_UART UART_NUM_0
+#define CM_BRIDGE_UART_TX_PIN 43
+#define CM_BRIDGE_UART_RX_PIN 44
+#define CM_BRIDGE_UART_BAUD_RATE 115200
+#define CM_UART_RX_BUFFER_SIZE 2048
+#define CM_UART_TX_BUFFER_SIZE 2048
+#define CM_UART_READ_SIZE 128
 #define CM_UART_LINE_SIZE 384
 #define CM_HID_QUEUE_DEPTH 16
 #define CM_HID_JSON_SIZE 512
@@ -122,8 +130,11 @@ static void uart_tx_task(void *context) {
     cm_uart_message_t message;
     while (true) {
         if (xQueueReceive(uart_tx_queue, &message, portMAX_DELAY) == pdTRUE) {
-            printf("%s\n", message.line);
-            fflush(stdout);
+            const size_t length = strlen(message.line);
+            if (uart_write_bytes(CM_BRIDGE_UART, message.line, length) < 0 ||
+                uart_write_bytes(CM_BRIDGE_UART, "\n", 1) < 0) {
+                ESP_LOGW(TAG, "UART response could not be queued");
+            }
         }
     }
 }
@@ -132,6 +143,7 @@ static void bridge_emit_state(void) {
     cJSON *event = cJSON_CreateObject();
     if (event == NULL) return;
     cJSON_AddStringToObject(event, "event", "bridge");
+    cJSON_AddStringToObject(event, "firmwareVersion", CM_FIRMWARE_VERSION);
     cJSON_AddBoolToObject(event, "usbMounted", usb_mounted);
     cJSON_AddBoolToObject(event, "desktopConnected", desktop_connected);
     (void)uart_queue_object(event, false);
@@ -344,15 +356,57 @@ static void handle_uart_command(const char *line) {
 
 static void uart_rx_task(void *context) {
     (void)context;
-    char line[CM_UART_LINE_SIZE];
+    uint8_t input[CM_UART_READ_SIZE];
+    char line[CM_UART_LINE_SIZE] = {0};
+    size_t line_length = 0;
+    bool discard_line = false;
     while (true) {
-        if (fgets(line, sizeof(line), stdin) != NULL) {
-            handle_uart_command(line);
-        } else {
-            clearerr(stdin);
-            vTaskDelay(pdMS_TO_TICKS(10));
+        const int length = uart_read_bytes(CM_BRIDGE_UART, input, sizeof(input), pdMS_TO_TICKS(20));
+        for (int index = 0; index < length; index++) {
+            const char character = (char)input[index];
+            if (character == '\n') {
+                if (!discard_line && line_length > 0) {
+                    line[line_length] = '\0';
+                    handle_uart_command(line);
+                }
+                line_length = 0;
+                discard_line = false;
+                continue;
+            }
+            if (character == '\r' || discard_line) continue;
+            if (line_length + 1 >= sizeof(line)) {
+                line_length = 0;
+                discard_line = true;
+                continue;
+            }
+            line[line_length++] = character;
         }
     }
+}
+
+static esp_err_t bridge_uart_install(void) {
+    const uart_config_t config = {
+        .baud_rate = CM_BRIDGE_UART_BAUD_RATE,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+    ESP_RETURN_ON_ERROR(uart_param_config(CM_BRIDGE_UART, &config), TAG, "UART configuration failed");
+    ESP_RETURN_ON_ERROR(
+        uart_set_pin(CM_BRIDGE_UART, CM_BRIDGE_UART_TX_PIN, CM_BRIDGE_UART_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE),
+        TAG,
+        "UART pin configuration failed"
+    );
+    return uart_driver_install(
+        CM_BRIDGE_UART,
+        CM_UART_RX_BUFFER_SIZE,
+        CM_UART_TX_BUFFER_SIZE,
+        0,
+        NULL,
+        0
+    );
 }
 
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
@@ -409,8 +463,6 @@ static void tinyusb_event_handler(tinyusb_event_t *event, void *arg) {
 }
 
 void app_main(void) {
-    setvbuf(stdin, NULL, _IONBF, 0);
-    setvbuf(stdout, NULL, _IONBF, 0);
     cm_json_accumulator_reset(&host_accumulator);
     cm_input_replay_cache_reset(&input_replay_cache);
     hid_queue = xQueueCreate(CM_HID_QUEUE_DEPTH, sizeof(cm_hid_message_t));
@@ -420,9 +472,13 @@ void app_main(void) {
         ESP_LOGE(TAG, "Unable to allocate bridge queues");
         return;
     }
-    if (xTaskCreate(uart_tx_task, "micro_uart_tx", 4096, NULL, 7, NULL) != pdPASS ||
+    if (bridge_uart_install() != ESP_OK) {
+        ESP_LOGE(TAG, "Unable to install bridge UART");
+        return;
+    }
+    if (xTaskCreate(uart_tx_task, "micro_uart_tx", 4096, NULL, 9, NULL) != pdPASS ||
         xTaskCreate(hid_tx_task, "micro_hid_tx", 4096, NULL, 6, NULL) != pdPASS ||
-        xTaskCreate(uart_rx_task, "micro_uart_rx", 4096, NULL, 5, NULL) != pdPASS) {
+        xTaskCreate(uart_rx_task, "micro_uart_rx", 4096, NULL, 8, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Unable to start bridge tasks");
         return;
     }
@@ -435,5 +491,5 @@ void app_main(void) {
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_config));
     usb_mounted = tud_mounted();
     bridge_emit_state();
-    ESP_LOGI(TAG, "ESP32-S3 Codex Micro Lab bridge ready (UART 115200, compile-only lab image)");
+    ESP_LOGI(TAG, "ESP32-S3 Codex Micro Lab bridge ready (%s, dedicated UART0 at 115200)", CM_FIRMWARE_VERSION);
 }

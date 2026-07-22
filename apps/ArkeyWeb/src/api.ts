@@ -1,52 +1,41 @@
-import type { MicroBridgePort, Snapshot, ThreadCandidate, WebConfiguration } from "./types";
+import type { MicroBridgePort, Snapshot } from "./types";
 
 export type HardwareControl =
-  | "agent-1" | "agent-2" | "agent-3" | "agent-4" | "agent-5" | "agent-6"
-  | "fast" | "approve" | "decline" | "continue" | "ptt" | "send"
-  | "reasoning-press" | "encoder-cw" | "encoder-ccw"
-  | "joystick-up" | "joystick-right" | "joystick-down" | "joystick-left";
+  | `agent-${1 | 2 | 3 | 4 | 5 | 6}`
+  | "fast"
+  | "approve"
+  | "decline"
+  | "continue"
+  | "ptt"
+  | "send"
+  | "reasoning-press"
+  | "encoder-cw"
+  | "encoder-ccw"
+  | "joystick-up"
+  | "joystick-right"
+  | "joystick-down"
+  | "joystick-left";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
     credentials: "same-origin",
+    headers: init?.body ? { "Content-Type": "application/json" } : undefined,
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
   });
-  const payload = await response.json() as { result?: T; error?: string };
-  if (!response.ok || payload.error) throw new Error(payload.error || `请求失败 (${response.status})`);
-  return payload.result as T;
+  const body = await response.json() as { error?: string } & T;
+  if (!response.ok) throw new Error(body.error ?? `请求失败 (${response.status})`);
+  return body;
 }
 
 export const api = {
   snapshot: () => request<Snapshot>("/api/snapshot"),
-  rpc: <T>(method: string, params: Record<string, unknown> = {}) => request<T>("/api/rpc", {
-    method: "POST",
-    body: JSON.stringify({ method, params }),
-  }),
-  saveConfiguration: (configuration: WebConfiguration & { workspaceRoot: string; selectedModel?: string }) =>
-    request<{ restarted: boolean }>("/api/config", {
-      method: "POST",
-      body: JSON.stringify(configuration),
-    }),
-  hardwarePorts: () => request<MicroBridgePort[]>("/api/hardware/ports"),
-  hardwareEvent: (control: HardwareControl, phase: "down" | "up" | "tap") => request<{ acknowledged: true }>("/api/hardware/event", {
+  hardwarePorts: async () => (await request<{ ports: MicroBridgePort[] }>("/api/hardware/ports")).ports,
+  hardwareEvent: (control: HardwareControl, phase: "down" | "up" | "tap") => request<{ ok: true }>("/api/hardware/event", {
     method: "POST",
     body: JSON.stringify({ control, phase }),
   }),
-  threadCandidates: () => request<ThreadCandidate[]>("/api/bindings/candidates"),
-  bindThread: (taskId: string, candidateToken: string) => request<{ bound: true }>("/api/bindings", {
+  saveSettings: (microBridgePort: string) => request<{ ok: true }>("/api/settings", {
     method: "POST",
-    body: JSON.stringify({ taskId, candidateToken }),
-  }),
-  bindNewThread: (taskId: string) => request<{ bound: true }>("/api/bindings/new", {
-    method: "POST",
-    body: JSON.stringify({ taskId }),
-  }),
-  unbindThread: (taskId: string) => request<{ bound: false }>("/api/bindings/unbind", {
-    method: "POST",
-    body: JSON.stringify({ taskId }),
+    body: JSON.stringify({ microBridgePort }),
   }),
 };

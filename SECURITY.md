@@ -1,34 +1,21 @@
 # Security policy
 
-## Reporting a vulnerability
+Report vulnerabilities through GitHub's private “Report a vulnerability” flow.
+Do not put credentials, Codex content, local paths, USB serial numbers, or
+firmware backups in a public issue.
 
-Please use GitHub's **Report a vulnerability** flow in the Security tab. Do not
-open a public issue for a vulnerability involving command execution, local
-socket access, credentials, approval handling, HID parsing, or firmware writes.
+## Boundary
 
-Include the affected commit, macOS/Node/Codex versions, keyboard and firmware
-revision if relevant, reproduction steps, and expected impact. Do not include
-access tokens, private prompts, or unrelated user data.
+- The Web server binds only to `127.0.0.1` and validates Host, exact Origin, and
+  an HttpOnly SameSite session cookie for write requests.
+- The HTTP and UART layers accept only a fixed semantic control allowlist.
+- Browser snapshots contain connection state, firmware version, and sanitized
+  six-slot light parameters only.
+- Arkey Web does not read Codex threads, messages, account data, or credentials.
+- The only persisted setting is the selected USB-UART path.
+- Repository scripts build and test firmware only; they never flash, erase, or
+  restore a device.
 
-## Supported code
-
-Security fixes target the current `main` branch. This development project does
-not promise long-term support for older builds or compatibility with every
-Codex CLI version.
-
-## Security boundary
-
-- Arkey starts Codex App Server locally over newline-delimited JSON on stdio. It
-  does not expose App Server on TCP or a public network.
-- The daemon socket and state are stored below `~/.arkey`; bindings, task IDs,
-  titles, and settings may be persisted, but prompt/reply bodies and microphone
-  audio are not intentionally persisted by Arkey.
-- Codex authentication remains owned by the locally installed Codex CLI. Arkey
-  does not copy or manage Codex access tokens.
-- Firmware scripts build only. No repository script automatically flashes a
-  device or enters a bootloader.
-- The QMK bridge accepts only Arkey frames on the keyboard's existing Raw HID
-  interface and restores ordinary lighting after loss of heartbeat.
-
-OpenAI/Codex service-side storage and privacy behavior is governed separately
-by the service and account configuration; Arkey makes no claim about it.
+The native USB interoperability behavior is version-sensitive and unsupported.
+Treat firmware writes and changes to USB identity or HID parsing as privileged
+operations requiring physical recovery planning.
