@@ -35,7 +35,7 @@ Arkey Web 是基于 [shuhari04/arkey](https://github.com/shuhari04/arkey) 继续
 
 ## 启动 Web
 
-要求 Node.js 20 或更高版本：
+要求 Node.js 20 或更高版本。`npm run check` 还需要系统提供 C11 编译器（`cc`；macOS 可通过 Xcode Command Line Tools 安装）：
 
 ```bash
 npm ci
