@@ -22,7 +22,9 @@ Arkey Web 是基于 [shuhari04/arkey](https://github.com/shuhari04/arkey) 继续
 
 ## 演示
 
-[观看 Arkey Web 与 Codex Desktop 联动演示（MP4）](docs/assets/arkey-web-demo.mp4)
+https://github.com/user-attachments/assets/2814e8b1-9222-42fa-942b-8eff941e548e
+
+[下载 Arkey Web 与 Codex Desktop 联动演示（MP4）](docs/assets/arkey-web-demo.mp4)
 
 视频展示了通过 Web 控制面触发实体输入后，Codex Desktop 中对应 Agent 槽位的状态联动和定时任务效果。
 
