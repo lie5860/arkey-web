@@ -76,3 +76,7 @@ Rust 版本完成并验证以前，最小 Node 桥属于运行必需部分。
 ## 许可
 
 项目是独立、非官方、非商业用途的实验。根目录代码按 [PolyForm Noncommercial 1.0.0](LICENSE) 提供；固件文件保留其 SPDX 文件级许可。上游及第三方通知见[第三方通知](docs/legal/THIRD_PARTY_NOTICES.md)，名称使用边界见[商标说明](docs/legal/TRADEMARKS.md)。参与开发前请阅读[贡献指南](docs/CONTRIBUTING.md)；安全问题请按[安全策略](docs/SECURITY.md)报告。
+
+## 社区致谢
+
+感谢 [LINUX DO](https://linux.do/) 社区对本项目的认可与支持。
