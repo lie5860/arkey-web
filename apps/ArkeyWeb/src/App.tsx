@@ -6,6 +6,7 @@ import {
   ArrowUp,
   Check,
   CircleNotch,
+  GearSix,
   GitFork,
   Lightning,
   Microphone,
@@ -528,10 +529,45 @@ export function App() {
         <section className="deck-zone" aria-label="Codex 键盘控制面">
           <div className="keyboard-deck" aria-label="虚拟 Codex 键盘">
             <div className="keyboard-grid">
+              <button
+                className={`reasoning-module has-tooltip ${hardwareMode ? "hardware-reasoning" : currentTask?.effort ? "has-explicit-effort" : "is-auto"}`}
+                type="button"
+                aria-label={hardwareMode ? "推理旋钮；按下发送旋钮按键，滚轮发送旋转事件" : `调整推理强度，当前 ${currentTask?.effort?.toUpperCase() ?? "AUTO"}，滚轮向上增加，向下降低`}
+                data-tooltip={`REASONING\n${hardwareMode ? "按下或滚动以发送固定硬件信号" : `当前 ${currentTask?.effort?.toUpperCase() ?? "AUTO"}，点击或滚动切换`}`}
+                disabled={hardwareMode ? !microConnected : !currentTask || busy !== undefined}
+                onClick={hardwareMode ? undefined : () => cycleReasoning(1)}
+                onPointerDown={hardwareMode ? (event) => hardwarePointerDown(event, "reasoning-press") : undefined}
+                onPointerUp={hardwareMode ? () => hardwareRelease("reasoning-press") : undefined}
+                onPointerCancel={hardwareMode ? () => hardwareRelease("reasoning-press") : undefined}
+                onWheel={changeReasoning}
+              >
+                <span className="dial"><span className="dial-notch" /></span>
+                <span className="module-label">REASONING</span>
+                <span className="dial-value" aria-live="polite">{hardwareMode ? "ENCODER" : currentTask?.effort?.toUpperCase() ?? "AUTO"}</span>
+              </button>
+
+              {agentTasks.slice(0, 2).map((task, index) => (
+                <KeyboardKey
+                  key={task?.taskId ?? `slot-${index}`}
+                  label={`AGENT ${index + 1}`}
+                  hint={hardwareMode ? `Codex Micro 槽位 ${index + 1}，${slotEffect(slotLights[index])}` : `${task?.title ?? `Agent ${index + 1}`}，${agentStatus(task)}`}
+                  className={`agent-key ${hardwareMode ? `hardware-agent effect-${slotLights[index]?.effect ?? 0}` : stateClass(task)}`}
+                  busy={!hardwareMode && busy === `agent-${index}`}
+                  disabled={hardwareMode && !microConnected}
+                  onClick={hardwareMode ? undefined : () => selectAgent(task, index)}
+                  {...(hardwareMode ? hardwareKeyProps(`agent-${index + 1}` as HardwareControl) : {})}
+                  style={hardwareMode ? slotLightStyle(slotLights[index]) : undefined}
+                >
+                  <span className="agent-number">{index + 1}</span>
+                  <span className="agent-state-label">{hardwareMode ? slotEffect(slotLights[index]) : agentStatus(task)}</span>
+                  <span className="agent-light" />
+                </KeyboardKey>
+              ))}
+
               <div
                 className="joystick-module has-tooltip"
-                aria-label="工作流旋钮"
-                data-tooltip={`WORKFLOW\n${hardwareMode ? "转动或按下以发送固定硬件信号" : "浏览工作流选项：计划、续接、审阅和 Fast"}`}
+                aria-label="工作流摇杆"
+                data-tooltip={`WORKFLOW\n${hardwareMode ? "拨动以发送固定硬件信号" : "浏览工作流选项：计划、续接、审阅和 Fast"}`}
               >
                 <button
                   type="button"
@@ -573,41 +609,6 @@ export function App() {
                 ><ArrowDown weight="bold" /></button>
                 <span className="module-label">WORKFLOW</span>
               </div>
-
-              {agentTasks.slice(0, 2).map((task, index) => (
-                <KeyboardKey
-                  key={task?.taskId ?? `slot-${index}`}
-                  label={`AGENT ${index + 1}`}
-                  hint={hardwareMode ? `Codex Micro 槽位 ${index + 1}，${slotEffect(slotLights[index])}` : `${task?.title ?? `Agent ${index + 1}`}，${agentStatus(task)}`}
-                  className={`agent-key ${hardwareMode ? `hardware-agent effect-${slotLights[index]?.effect ?? 0}` : stateClass(task)}`}
-                  busy={!hardwareMode && busy === `agent-${index}`}
-                  disabled={hardwareMode && !microConnected}
-                  onClick={hardwareMode ? undefined : () => selectAgent(task, index)}
-                  {...(hardwareMode ? hardwareKeyProps(`agent-${index + 1}` as HardwareControl) : {})}
-                  style={hardwareMode ? slotLightStyle(slotLights[index]) : undefined}
-                >
-                  <span className="agent-number">{index + 1}</span>
-                  <span className="agent-state-label">{hardwareMode ? slotEffect(slotLights[index]) : agentStatus(task)}</span>
-                  <span className="agent-light" />
-                </KeyboardKey>
-              ))}
-
-              <button
-                className={`reasoning-module has-tooltip ${hardwareMode ? "hardware-reasoning" : currentTask?.effort ? "has-explicit-effort" : "is-auto"}`}
-                type="button"
-                aria-label={hardwareMode ? "推理旋钮；按下发送旋钮按键，滚轮发送旋转事件" : `调整推理强度，当前 ${currentTask?.effort?.toUpperCase() ?? "AUTO"}，滚轮向上增加，向下降低`}
-                data-tooltip={`REASONING\n${hardwareMode ? "按下或滚动以发送固定硬件信号" : `当前 ${currentTask?.effort?.toUpperCase() ?? "AUTO"}，点击或滚动切换`}`}
-                disabled={hardwareMode ? !microConnected : !currentTask || busy !== undefined}
-                onClick={hardwareMode ? undefined : () => cycleReasoning(1)}
-                onPointerDown={hardwareMode ? (event) => hardwarePointerDown(event, "reasoning-press") : undefined}
-                onPointerUp={hardwareMode ? () => hardwareRelease("reasoning-press") : undefined}
-                onPointerCancel={hardwareMode ? () => hardwareRelease("reasoning-press") : undefined}
-                onWheel={changeReasoning}
-              >
-                <span className="dial"><span className="dial-notch" /></span>
-                <span className="module-label">REASONING</span>
-                <span className="dial-value" aria-live="polite">{hardwareMode ? "ENCODER" : currentTask?.effort?.toUpperCase() ?? "AUTO"}</span>
-              </button>
 
               {agentTasks.slice(2, 6).map((task, offset) => {
                 const index = offset + 2;
@@ -681,7 +682,7 @@ export function App() {
                   <span className={`mini-light ${hardwareMode ? snapshot?.hardware.usbMounted ? "active" : "" : ready ? "active" : ""}`} />
                   <span className={`mini-light ${hardwareMode ? snapshot?.hardware.desktopConnected ? "working" : "" : currentTask?.state === "working" ? "working" : ""}`} />
                 </span>
-                <span className="status-settings-knob" aria-hidden="true" />
+                <span className="status-settings-knob" aria-hidden="true"><GearSix weight="bold" /></span>
               </button>
               <button
                 className={`ptt-key has-tooltip ${isRecording ? "recording" : ""}`}
