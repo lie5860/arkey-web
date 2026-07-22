@@ -85,6 +85,7 @@ export function resolveCodexExecutable(
     "/usr/local/bin/codex",
     "/usr/bin/codex",
     "/Applications/Codex.app/Contents/Resources/codex",
+    "/Applications/ChatGPT.app/Contents/Resources/codex",
   );
   const executable = [...new Set(candidates)].find((candidate) => exists(candidate));
   if (!executable) throw new Error("Codex CLI was not found; set CODEX_PATH to an absolute codex executable path");

@@ -1,0 +1,7 @@
+## IDF Component Manager manifest. Versions are pinned for reproducible lab builds.
+dependencies:
+  idf: "6.0.1"
+  espressif/esp_tinyusb:
+    version: "2.2.1"
+  espressif/cjson:
+    version: "1.7.19~2"

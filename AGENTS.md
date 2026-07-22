@@ -1,8 +1,8 @@
 # Instructions for coding agents
 
 This repository is intentionally narrow: an unofficial Codex App Server client,
-an Arkey host daemon, AgentGlow lighting, board-specific QMK examples, and one
-isolated, development-only Codex Micro Lab experiment for the Q6 Pro.
+an Arkey host daemon, AgentGlow lighting, board-specific QMK examples, and
+isolated, development-only Codex Micro Lab experiments.
 
 ## Read before changing code
 
@@ -16,10 +16,18 @@ isolated, development-only Codex Micro Lab experiment for the Q6 Pro.
 
 - Standard Arkey builds and new board ports must never use a third-party USB
   identity or native-facing Micro compatibility behavior.
-- The sole exception is the explicitly named `codex-micro-lab` Q6 Pro experiment
-  documented in `docs/CODEX_MICRO_LAB.md`. Keep identity/protocol material in
-  its release-audited Lab paths; do not add a private SDK, vendor source/assets,
-  production claim, commercial workflow, or automatic enablement.
+- The sole exceptions are the explicitly named `codex-micro-lab` Q6 Pro
+  experiment, the manually launched `CodexMicroVirtualLab` macOS experiment,
+  and the compile-only `esp32s3-codex-micro-lab` hardware bridge documented in
+  `docs/CODEX_MICRO_LAB.md` and `docs/CODEX_MICRO_ESP32S3_LAB.md`. Keep
+  identity/protocol material in their release-audited Lab paths; do not add a private SDK, vendor
+  source/assets, production claim, commercial workflow, or automatic enablement.
+- The virtual Lab must require an explicit identity-test acknowledgement, must
+  never start as part of the normal app/Web build, and must disappear when its
+  foreground process exits.
+- The ESP32-S3 Lab must never be part of the normal App Server/QMK build, must
+  accept only the fixed semantic control allowlist over UART, and must not
+  forward Codex content or identifiers to Web. Its build script is compile-only.
 - Do not map App Server-only Skill/Cancel actions onto joystick directions.
 - Never flash hardware automatically. Building is allowed; writing firmware
   requires a recovery preflight and a fresh, explicit confirmation immediately
@@ -54,10 +62,13 @@ npm ci
 npm run check
 ./scripts/check-codex-app-server.sh
 swift test --package-path apps/ArkeyMac
+swift test --package-path apps/CodexMicroVirtualLab
+npm run codex-micro-esp32s3-lab:test
 ./scripts/build-macos-app.sh
 codesign --verify --deep --strict --verbose=2 build/Arkey.app
 ```
 
-For firmware changes, also run the board's pinned build script and confirm the
-upstream QMK worktree is clean afterward. Report which checks ran, which were
-skipped, and whether hardware was physically tested.
+For firmware changes, also run the target's pinned build script. Confirm the
+upstream QMK worktree is clean after QMK builds. ESP32-S3 Lab changes require
+ESP-IDF 6.0.1 and its acknowledged compile-only build. Report which checks ran,
+which were skipped, and whether hardware was physically tested.

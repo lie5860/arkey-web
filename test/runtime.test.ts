@@ -105,7 +105,16 @@ class FakeAppServer extends EventEmitter {
       return { data: [{ name: "Plan", mode: "plan", model: "test-model", reasoning_effort: "high" }] };
     }
     if (method === "review/start") return { turn: { id: "review-turn" } };
-    if (method === "thread/list") return { data: [{ id: "external-thread", name: "External" }] };
+    if (method === "thread/list") return {
+      data: [{
+        id: "external-thread",
+        name: "External",
+        cwd: "/another/workspace",
+        source: "vscode",
+        preview: "private content must not cross the Arkey RPC",
+      }],
+      nextCursor: null,
+    };
     if (method === "thread/resume") return { thread: { id: "external-thread", name: "External" } };
     return {};
   }
@@ -424,6 +433,137 @@ test("Plan is capability-gated and applies the discovered preset to the next idl
     await new Promise((resolve) => setImmediate(resolve));
     const unavailable = await daemon.rpc("actions.list") as Array<{ actionId: string; enabled: boolean }>;
     assert.equal(unavailable.find((action) => action.actionId === "plan")?.enabled, false, "a missing experimental method must not make ready fail");
+  } finally {
+    await daemon.stop();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("Web actions can toggle Fast and return reasoning to automatic", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "arkey-web-actions-"));
+  const transport = new V2Transport();
+  const appServer = new FakeAppServer();
+  const daemon = new ArkeyDaemon(transport as never, { runtimeDirectory: directory, appServer: appServer as never });
+  try {
+    const task = (await daemon.rpc("task.list") as Array<{ taskId: string }>)[0];
+
+    const fastEnabled = await daemon.rpc("action.trigger", {
+      actionId: "fast", taskId: task.taskId, enabled: true, source: "web",
+    }) as { serviceTier?: string };
+    assert.equal(fastEnabled.serviceTier, "priority");
+    const fastDisabled = await daemon.rpc("action.trigger", {
+      actionId: "fast", taskId: task.taskId, enabled: false, source: "web",
+    }) as { serviceTier?: string };
+    assert.equal(fastDisabled.serviceTier, undefined);
+
+    const explicitEffort = await daemon.rpc("action.trigger", {
+      actionId: "reasoning", taskId: task.taskId, effort: "high", source: "web",
+    }) as { effort?: string };
+    assert.equal(explicitEffort.effort, "high");
+    const automaticEffort = await daemon.rpc("action.trigger", {
+      actionId: "reasoning", taskId: task.taskId, effort: null, source: "web",
+    }) as { effort?: string };
+    assert.equal(automaticEffort.effort, undefined);
+    await assert.rejects(() => daemon.rpc("action.trigger", {
+      actionId: "reasoning", taskId: task.taskId, effort: "invented", source: "web",
+    }), /not supported/);
+
+    const hardwareCompatibleCycle = await daemon.rpc("action.trigger", {
+      actionId: "reasoning", taskId: task.taskId, direction: "clockwise", source: "hardware",
+    }) as { effort?: string };
+    assert.equal(hardwareCompatibleCycle.effort, "high", "legacy rotation must still advance from the model default");
+  } finally {
+    await daemon.stop();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("fixed Web Agent slots can bind, replace, and unbind App Server threads", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "arkey-web-bindings-"));
+  const transport = new V2Transport();
+  const appServer = new FakeAppServer();
+  const daemon = new ArkeyDaemon(transport as never, { runtimeDirectory: directory, appServer: appServer as never });
+  try {
+    const tasks = await daemon.rpc("task.list") as Array<{ taskId: string; slotIndex: number }>;
+    const agentOne = tasks.find((task) => task.slotIndex === 0)!;
+    const agentTwo = tasks.find((task) => task.slotIndex === 1)!;
+
+    const candidates = await daemon.rpc("task.bind.candidates") as {
+      candidates: Array<{ id: string; cwd?: string; source?: string; currentWorkspace?: boolean }>;
+    };
+    assert.deepEqual(candidates.candidates, [{
+      id: "external-thread",
+      name: "External",
+      cwd: "/another/workspace",
+      source: "vscode",
+      updatedAt: undefined,
+      recencyAt: undefined,
+      currentWorkspace: false,
+    }]);
+    assert.doesNotMatch(JSON.stringify(candidates), /private content/);
+    const listRequest = appServer.requests.filter((request) => request.method === "thread/list").at(-1);
+    assert.equal(Object.hasOwn(listRequest?.params as object, "cwd"), false, "binding discovery must not require an exact workspace match");
+
+    const bound = await daemon.rpc("task.bind", {
+      taskId: agentOne.taskId, threadId: "external-thread", replace: false,
+    }) as { taskId: string; slotIndex: number; threadId?: string; title: string };
+    assert.deepEqual({ taskId: bound.taskId, slotIndex: bound.slotIndex, threadId: bound.threadId, title: bound.title }, {
+      taskId: agentOne.taskId, slotIndex: 0, threadId: "external-thread", title: "External",
+    });
+    const importedSnapshot = await daemon.rpc("runtime.snapshot") as {
+      tasks: Array<{ taskId: string; statusObserved?: boolean }>;
+    };
+    assert.equal(importedSnapshot.tasks.find((task) => task.taskId === agentOne.taskId)?.statusObserved, false);
+    const resumeCountBeforeActivation = appServer.requests.filter((request) => request.method === "thread/resume").length;
+    await daemon.rpc("task.activate", { taskId: agentOne.taskId });
+    assert.equal(appServer.requests.filter((request) => request.method === "thread/resume").length, resumeCountBeforeActivation + 1);
+    appServer.emit("notification", {
+      method: "thread/status/changed",
+      params: { threadId: "external-thread", status: { type: "idle" } },
+    });
+    let activationSnapshot = await daemon.rpc("runtime.snapshot") as {
+      tasks: Array<{ taskId: string; statusObserved?: boolean; state: string }>;
+    };
+    assert.equal(activationSnapshot.tasks.find((task) => task.taskId === agentOne.taskId)?.statusObserved, false,
+      "resume idle is local to this App Server connection and must not claim external status is observed");
+    appServer.emit("notification", {
+      method: "thread/status/changed",
+      params: { threadId: "external-thread", status: { type: "active", activeFlags: [] } },
+    });
+    activationSnapshot = await daemon.rpc("runtime.snapshot") as {
+      tasks: Array<{ taskId: string; statusObserved?: boolean; state: string }>;
+    };
+    assert.deepEqual(
+      activationSnapshot.tasks.find((task) => task.taskId === agentOne.taskId) && {
+        statusObserved: activationSnapshot.tasks.find((task) => task.taskId === agentOne.taskId)?.statusObserved,
+        state: activationSnapshot.tasks.find((task) => task.taskId === agentOne.taskId)?.state,
+      },
+      { statusObserved: true, state: "working" },
+    );
+    appServer.emit("notification", {
+      method: "thread/status/changed",
+      params: { threadId: "external-thread", status: { type: "idle" } },
+    });
+    await assert.rejects(() => daemon.rpc("task.bind", {
+      taskId: agentTwo.taskId, threadId: "external-thread", replace: false,
+    }), /already managed/);
+
+    const unbound = await daemon.rpc("task.unbind", { taskId: agentOne.taskId }) as { threadId?: string; title: string; state: string };
+    assert.deepEqual({ threadId: unbound.threadId, title: unbound.title, state: unbound.state }, {
+      threadId: undefined, title: "Agent 1", state: "unassigned",
+    });
+
+    const created = await daemon.rpc("task.bind.new", { taskId: agentOne.taskId, replace: false }) as {
+      taskId: string; slotIndex: number; threadId?: string; state: string;
+    };
+    assert.equal(created.taskId, agentOne.taskId);
+    assert.equal(created.slotIndex, 0);
+    assert.equal(created.threadId, "thread-1");
+    assert.equal(created.state, "idle");
+    const createdSnapshot = await daemon.rpc("runtime.snapshot") as {
+      tasks: Array<{ taskId: string; statusObserved?: boolean }>;
+    };
+    assert.equal(createdSnapshot.tasks.find((task) => task.taskId === agentOne.taskId)?.statusObserved, true);
   } finally {
     await daemon.stop();
     rmSync(directory, { recursive: true, force: true });

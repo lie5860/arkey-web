@@ -196,6 +196,7 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
   private overlayEpoch = 0;
   private voiceState: VoiceState = "idle";
   private taskEntryTransients = new Map<string, { state: TaskLightState; effect: EffectSpec; timer: NodeJS.Timeout }>();
+  private observedTaskIds = new Set<string>();
   private controlTransients = new Map<string, { effect: EffectSpec; timer: NodeJS.Timeout }>();
   private lastHardwareTaskClick = new Map<string, number>();
   private appServerState: RuntimeStatus["appServer"] = "offline";
@@ -445,6 +446,8 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
             fullControl: this.transport.connection.fullControl,
           } : undefined,
         };
+      case "runtime.snapshot":
+        return this.snapshot();
       case "settings.get":
         return this.settings;
       case "settings.update": {
@@ -494,6 +497,8 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
         return this.sortedTasks();
       case "task.select":
         return this.selectTask(String(object.taskId ?? ""));
+      case "task.activate":
+        return this.activateTask(String(object.taskId ?? ""));
       case "task.update":
         return this.updateTask(object);
       case "task.reorder":
@@ -503,6 +508,14 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
         return this.createTask(typeof object.title === "string" ? object.title : undefined);
       case "task.import":
         return this.importTask(typeof object.threadId === "string" ? object.threadId : undefined);
+      case "task.bind.candidates":
+        return this.threadBindingCandidates();
+      case "task.bind":
+        return this.bindTaskThread(object);
+      case "task.bind.new":
+        return this.bindNewTaskThread(object);
+      case "task.unbind":
+        return this.unbindTaskThread(String(object.taskId ?? ""));
       case "task.fork":
         return this.forkTask(String(object.taskId ?? this.taskState.selectedTaskId ?? ""));
       case "account.login.start":
@@ -609,7 +622,10 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
       status,
       settings: this.settings,
       bindings: this.bindingView(),
-      tasks: this.sortedTasks(),
+      tasks: this.sortedTasks().map((task) => ({
+        ...task,
+        statusObserved: !task.threadId || this.observedTaskIds.has(task.taskId),
+      })),
       actions: this.actions,
       authenticated: status.authenticated,
       models: status.models,
@@ -1178,6 +1194,19 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
     return task;
   }
 
+  private async activateTask(taskId: string): Promise<TaskSlot> {
+    const task = this.requireTask(taskId);
+    if (task.threadId) {
+      await this.ensureAppServer();
+      const response = await this.appServer.request<Record<string, unknown>>("thread/resume", { threadId: task.threadId });
+      const thread = asObject(response.thread);
+      if (typeof thread.id !== "string") throw new Error("App Server thread/resume returned no thread id");
+    }
+    this.selectTask(task.taskId);
+    this.broadcast("task.activated", { taskId: task.taskId, slotIndex: task.slotIndex, bound: Boolean(task.threadId) });
+    return task;
+  }
+
   private updateTask(params: Record<string, unknown>): TaskSlot {
     const task = this.requireTask(String(params.taskId ?? ""));
     if (typeof params.pinned !== "boolean") throw new Error("task.update requires boolean pinned");
@@ -1225,6 +1254,7 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
       const thread = asObject(started.thread);
       if (typeof thread.id !== "string") throw new Error("App Server thread/start returned no thread id");
       task.threadId = thread.id;
+      this.observedTaskIds.add(task.taskId);
       this.setTaskLightState(task, "idle");
     }
     let response: Record<string, unknown>;
@@ -1251,6 +1281,7 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
     const turn = asObject(response.turn);
     if (typeof turn.id === "string") task.activeTurnId = turn.id;
     this.setTaskLightState(task, "working");
+    this.observedTaskIds.add(task.taskId);
     task.unread = false;
     task.recencyAt = this.now().toISOString();
     this.persistTasks();
@@ -1274,6 +1305,7 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
     target.model = source.model;
     target.effort = source.effort;
     target.serviceTier = source.serviceTier;
+    this.observedTaskIds.add(target.taskId);
     this.persistTasks();
     this.selectTask(target.taskId);
     return target;
@@ -1302,11 +1334,137 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
     if (typeof thread.id !== "string") throw new Error("App Server thread/resume returned no thread id");
     const task = this.createTask(typeof thread.name === "string" ? thread.name : "Imported Agent");
     task.threadId = thread.id;
+    this.observedTaskIds.delete(task.taskId);
     this.setTaskLightState(task, "idle");
     this.persistTasks();
     this.selectTask(task.taskId);
     this.broadcast("task.imported", task);
     return task;
+  }
+
+  private async threadBindingCandidates(): Promise<Record<string, unknown>> {
+    await this.ensureAppServer();
+    const managed = new Set(this.taskState.tasks.flatMap((task) => task.threadId ? [task.threadId] : []));
+    const candidates: Array<Record<string, unknown>> = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < 3 && candidates.length < 200; page += 1) {
+      const response = await this.appServer.request<Record<string, unknown>>("thread/list", {
+        ...(cursor ? { cursor } : {}),
+        sourceKinds: ["cli", "vscode", "appServer"],
+        sortKey: "recency_at",
+        sortDirection: "desc",
+        limit: 100,
+      });
+      const data = Array.isArray(response.data) ? response.data : [];
+      for (const thread of data) {
+        const value = asObject(thread);
+        if (typeof value.id !== "string" || managed.has(value.id)) continue;
+        const cwd = typeof value.cwd === "string" ? value.cwd : undefined;
+        const source = typeof value.source === "string" ? value.source : undefined;
+        candidates.push({
+          id: value.id,
+          name: typeof value.name === "string" ? value.name : undefined,
+          cwd,
+          source,
+          updatedAt: typeof value.updatedAt === "number" || typeof value.updatedAt === "string" ? value.updatedAt : undefined,
+          recencyAt: typeof value.recencyAt === "number" || typeof value.recencyAt === "string" ? value.recencyAt : undefined,
+          currentWorkspace: cwd === this.settings.workspaceRoot,
+        });
+        if (candidates.length >= 200) break;
+      }
+      cursor = typeof response.nextCursor === "string" && response.nextCursor ? response.nextCursor : undefined;
+      if (!cursor) break;
+    }
+    candidates.sort((left, right) => Number(right.currentWorkspace === true) - Number(left.currentWorkspace === true));
+    return { candidates, explicitSelectionRequired: true };
+  }
+
+  private async bindTaskThread(params: Record<string, unknown>): Promise<TaskSlot> {
+    await this.ensureAppServer();
+    const task = this.requireFixedAgentTask(String(params.taskId ?? ""));
+    const threadId = String(params.threadId ?? "");
+    if (!threadId) throw new Error("task.bind requires threadId");
+    const owner = this.taskForThread(threadId);
+    if (owner && owner.taskId !== task.taskId) throw new Error("Thread is already managed by another Arkey task");
+    if (task.threadId && task.threadId !== threadId && params.replace !== true) throw new Error("Agent slot is already bound; set replace to change it");
+    this.assertTaskCanChangeThread(task);
+    const response = await this.appServer.request<Record<string, unknown>>("thread/resume", { threadId });
+    const thread = asObject(response.thread);
+    if (typeof thread.id !== "string") throw new Error("App Server thread/resume returned no thread id");
+    this.applyThreadBinding(task, thread.id, typeof thread.name === "string" ? thread.name : task.title);
+    this.observedTaskIds.delete(task.taskId);
+    this.broadcast("task.bound", { taskId: task.taskId, slotIndex: task.slotIndex, threadId: task.threadId });
+    return task;
+  }
+
+  private async bindNewTaskThread(params: Record<string, unknown>): Promise<TaskSlot> {
+    await this.ensureAppServer();
+    const task = this.requireFixedAgentTask(String(params.taskId ?? ""));
+    if (task.threadId && params.replace !== true) throw new Error("Agent slot is already bound; set replace to start a new conversation");
+    this.assertTaskCanChangeThread(task);
+    const response = await this.appServer.request<Record<string, unknown>>("thread/start", {
+      cwd: this.settings.workspaceRoot,
+      model: task.model ?? this.settings.selectedModel ?? null,
+      serviceTier: null,
+    });
+    const thread = asObject(response.thread);
+    if (typeof thread.id !== "string") throw new Error("App Server thread/start returned no thread id");
+    this.applyThreadBinding(task, thread.id, `Agent ${task.slotIndex + 1}`);
+    this.observedTaskIds.add(task.taskId);
+    this.broadcast("task.bound", { taskId: task.taskId, slotIndex: task.slotIndex, threadId: task.threadId, created: true });
+    return task;
+  }
+
+  private unbindTaskThread(taskId: string): TaskSlot {
+    const task = this.requireFixedAgentTask(taskId);
+    this.assertTaskCanChangeThread(task);
+    if (task.threadId) this.requestQueues.delete(task.threadId);
+    this.observedTaskIds.delete(task.taskId);
+    task.threadId = undefined;
+    task.activeTurnId = undefined;
+    task.title = `Agent ${task.slotIndex + 1}`;
+    task.state = "unassigned";
+    task.unread = false;
+    task.pendingApprovalCount = 0;
+    task.pendingStructuredRequestCount = 0;
+    task.serviceTier = undefined;
+    task.effort = undefined;
+    task.model = undefined;
+    task.lastError = undefined;
+    task.recencyAt = this.now().toISOString();
+    this.persistTasks();
+    this.renderTaskAtmosphere();
+    this.renderOverlays();
+    this.broadcast("task.unbound", { taskId: task.taskId, slotIndex: task.slotIndex });
+    this.broadcast("task.changed", task);
+    return task;
+  }
+
+  private requireFixedAgentTask(taskId: string): TaskSlot {
+    const task = this.requireTask(taskId);
+    if (task.slotIndex < 0 || task.slotIndex > 5) throw new Error("Only Agent slots 1 through 6 can bind Web conversations");
+    return task;
+  }
+
+  private assertTaskCanChangeThread(task: TaskSlot): void {
+    if (task.activeTurnId || task.state === "working") throw new Error("Cannot change an Agent binding while its turn is active");
+    if (task.pendingApprovalCount || task.pendingStructuredRequestCount) throw new Error("Resolve pending approvals before changing the Agent binding");
+  }
+
+  private applyThreadBinding(task: TaskSlot, threadId: string, title: string): void {
+    if (task.threadId && task.threadId !== threadId) this.requestQueues.delete(task.threadId);
+    task.threadId = threadId;
+    task.activeTurnId = undefined;
+    task.title = title.trim() || `Agent ${task.slotIndex + 1}`;
+    task.state = "idle";
+    task.unread = false;
+    task.pendingApprovalCount = 0;
+    task.pendingStructuredRequestCount = 0;
+    task.serviceTier = undefined;
+    task.effort = undefined;
+    task.lastError = undefined;
+    task.recencyAt = this.now().toISOString();
+    this.selectTask(task.taskId);
   }
 
   private async triggerAction(actionId: string, params: Record<string, unknown>): Promise<unknown> {
@@ -1350,9 +1508,10 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
         const task = this.requireTask(taskId ?? "");
         const tier = this.appServer.fastTier(task.model ?? this.settings.selectedModel);
         if (!tier) throw new Error("The selected model does not expose a Fast service tier");
-        task.serviceTier = tier;
+        const enabled = typeof params.enabled === "boolean" ? params.enabled : task.serviceTier !== tier;
+        task.serviceTier = enabled ? tier : undefined;
         this.persistTasks();
-        this.broadcast("task.fast.changed", { taskId: task.taskId, serviceTier: tier });
+        this.broadcast("task.fast.changed", { taskId: task.taskId, serviceTier: task.serviceTier, enabled });
         return task;
       }
       case "reasoning": {
@@ -1360,9 +1519,16 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
         const task = this.requireTask(taskId ?? "");
         const efforts = this.appServer.reasoningEfforts(task.model ?? this.settings.selectedModel);
         if (!efforts.length) throw new Error("The selected model does not expose reasoning efforts");
-        const current = Math.max(-1, efforts.indexOf(task.effort ?? this.appServer.defaultEffort(task.model) ?? ""));
-        const direction = params.direction === "counterClockwise" ? -1 : 1;
-        task.effort = efforts[(current + direction + efforts.length) % efforts.length];
+        if (params.effort === null) {
+          task.effort = undefined;
+        } else if (typeof params.effort === "string") {
+          if (!efforts.includes(params.effort)) throw new Error(`Reasoning effort ${params.effort} is not supported by the selected model`);
+          task.effort = params.effort;
+        } else {
+          const current = Math.max(-1, efforts.indexOf(task.effort ?? this.appServer.defaultEffort(task.model) ?? ""));
+          const direction = params.direction === "counterClockwise" ? -1 : 1;
+          task.effort = efforts[(current + direction + efforts.length) % efforts.length];
+        }
         this.persistTasks();
         this.broadcast("task.effort.changed", { taskId: task.taskId, effort: task.effort, efforts });
         return task;
@@ -1459,6 +1625,7 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
       this.appServer.respondError(request.id, -32600, "Thread is not managed by Arkey");
       return;
     }
+    this.observedTaskIds.add(task.taskId);
     if (!isBinaryApprovalMethod(request.method) && !isStructuredRequestMethod(request.method)) {
       this.broadcast("appserver.request.unhandled", { taskId: task.taskId, method: request.method, requestId: request.id });
       return;
@@ -1522,18 +1689,24 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
     } else if (task && notification.method === "thread/status/changed") {
       const status = asObject(params.status);
       if (status.type === "idle") this.refreshTaskInputState(task);
-      else if (status.type === "systemError") this.setTaskLightState(task, "error");
+      else if (status.type === "systemError") {
+        this.observedTaskIds.add(task.taskId);
+        this.setTaskLightState(task, "error");
+      }
       else if (status.type === "notLoaded") this.setTaskLightState(task, "offline");
       else if (status.type === "active") {
+        this.observedTaskIds.add(task.taskId);
         const flags = Array.isArray(status.activeFlags) ? status.activeFlags : [];
         this.setTaskLightState(task, flags.includes("waitingOnApproval") || flags.includes("waitingOnUserInput") ? "requiresInput" : "working");
       }
     } else if (task && notification.method === "turn/started") {
+      this.observedTaskIds.add(task.taskId);
       const turn = asObject(params.turn);
       task.activeTurnId = typeof turn.id === "string" ? turn.id : task.activeTurnId;
       this.setTaskLightState(task, "working");
       task.unread = false;
     } else if (task && notification.method === "turn/completed") {
+      this.observedTaskIds.add(task.taskId);
       const turn = asObject(params.turn);
       task.activeTurnId = undefined;
       if (turn.status === "completed") {
@@ -1545,6 +1718,7 @@ export class ArkeyDaemon extends EventEmitter<{ runtime: [RuntimeEvent] }> {
         this.setTaskLightState(task, "idle");
       }
     } else if (task && notification.method === "error" && params.willRetry !== true) {
+      this.observedTaskIds.add(task.taskId);
       const error = asObject(params.error);
       task.lastError = typeof error.message === "string" ? error.message : "Codex App Server error";
       this.setTaskLightState(task, "error");

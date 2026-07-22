@@ -1,0 +1,4 @@
+build/
+firmware/esp32s3-codex-micro-lab/managed_components/
+firmware/esp32s3-codex-micro-lab/sdkconfig
+firmware/esp32s3-codex-micro-lab/sdkconfig.old

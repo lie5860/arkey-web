@@ -66,9 +66,11 @@ test("App Server client performs the stable stdio handshake and routes JSON-RPC"
 });
 
 test("Codex executable resolution works under launchd without relying on a shell", () => {
-  const existing = new Set(["/custom/codex", "/opt/homebrew/bin/codex"]);
+  const existing = new Set(["/custom/codex", "/opt/homebrew/bin/codex", "/Applications/ChatGPT.app/Contents/Resources/codex"]);
   const exists = (path: string) => existing.has(path);
   assert.equal(resolveCodexExecutable({ CODEX_PATH: "/custom/codex", PATH: "" }, exists), "/custom/codex");
   assert.equal(resolveCodexExecutable({ PATH: "" }, exists), "/opt/homebrew/bin/codex");
+  existing.delete("/opt/homebrew/bin/codex");
+  assert.equal(resolveCodexExecutable({ PATH: "" }, exists), "/Applications/ChatGPT.app/Contents/Resources/codex");
   assert.throws(() => resolveCodexExecutable({ CODEX_PATH: "relative/codex", PATH: "" }, () => false), /CODEX_PATH/);
 });

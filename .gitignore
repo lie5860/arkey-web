@@ -15,13 +15,16 @@ coverage/
 *.orig
 *.rej
 
-apps/ArkeyMac/.build/
-apps/ArkeyMac/.swiftpm/
+apps/*/.build/
+apps/*/.swiftpm/
 DerivedData/
 *.xcuserstate
 
 qmk_firmware/
 .qmk/
+firmware/esp32s3-codex-micro-lab/sdkconfig
+firmware/esp32s3-codex-micro-lab/sdkconfig.old
+firmware/esp32s3-codex-micro-lab/managed_components/
 .vscode/
 .idea/
 

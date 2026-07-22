@@ -7,7 +7,7 @@ Codex Micro Lab path exists for development-only interoperability testing. It
 does not run through the daemon and must not be confused with the default mode.
 
 ```text
-Arkey macOS app
+Arkey macOS app / localhost Web UI
   │
   ├── local CLI/RPC and event stream
   │       │
@@ -22,6 +22,18 @@ Optional Codex Micro Lab:
 
 ChatGPT Desktop ── report 0x06 ──► Q6 Pro Lab firmware
 Arkey app / config CLI ── report 0x07 ──► mapping EEPROM
+
+Optional Codex Micro Virtual Lab:
+
+ChatGPT Desktop ◄── report 0x06 ──► foreground CoreHID virtual device
+                                      ▲
+                                      └─ explicit local commands
+
+Optional ESP32-S3 Codex Micro Hardware Lab:
+
+localhost Web UI ── USB-UART JSONL ──► ESP32-S3 ── report 0x06 ──► ChatGPT Desktop
+                         ▲                  │
+                         └─ sanitized lights┘
 ```
 
 ## macOS application
@@ -34,6 +46,50 @@ runs the bundled JavaScript CLI with the user's installed Node executable.
 The application package includes the compiled host code, profiles, Node
 dependencies, and public documentation. It does not currently bundle Node
 itself, so Node 20 or later remains a runtime prerequisite.
+
+## Localhost Web console
+
+`apps/ArkeyWeb` is a React command surface served by `src/webserver.ts`. The
+server binds only to `127.0.0.1` and serves the production assets. In App Server
+mode it forwards an explicit allowlist of mutating actions to the same
+Unix-socket RPC used by the Mac app and never exposes App Server over HTTP. In
+the separately selected ESP32-S3 Lab mode, it does not start the daemon or App
+Server; it opens only the user-selected USB-UART port through
+`src/microbridge.ts`. The main view remains a keyboard-only surface.
+
+The browser polls a sanitized runtime snapshot. The HTTP response contains
+Arkey task slot IDs, titles, state, model metadata, and settings needed for the
+control surface. It removes Codex thread and turn IDs, account objects,
+bindings, prompt or response content, and credentials. POST requests require an
+exact loopback Origin plus an HttpOnly SameSite session cookie.
+
+Agent 1 through 6 remain stable local task slots. The daemon uses `thread/list`
+to offer recent unoccupied CLI, VS Code, and App Server threads across local
+workspaces, while sorting exact current-workspace matches first. It uses
+`thread/resume` to bind a chosen thread to a slot and `thread/start` to create a
+new binding. Replacing or unlinking a slot never deletes the old Codex thread.
+Candidate thread IDs are held only by the localhost server and represented in
+browser JavaScript by opaque random tokens; preview and turn content are
+discarded before the candidate metadata crosses the daemon RPC boundary.
+Agent key presses call `task.activate`, which resumes the bound thread and
+changes the daemon's action target without creating a latched UI selection.
+Imported threads remain status-unobserved until this App Server connection
+starts a turn or receives a thread/turn event, avoiding a false idle state.
+
+The Web launcher defaults to its own `process.execPath`, so a shell-specific
+Node installation can still start the daemon. A user may set absolute Node and
+Codex executable paths in the settings panel. Both paths must pass an
+executable and `--version` check before being stored. Only a daemon spawned and
+owned by that Web process can be restarted; an externally running daemon is
+left in place.
+
+ESP32-S3 mode is not an App Server fallback. The serial bridge accepts only a
+fixed list of semantic controls and converts them on-device to the observed
+native report. Browser snapshots contain the UART/native-USB/Desktop handshake
+booleans and sanitized color, brightness, effect, and speed values for slots
+0–5. Raw native messages, thread/turn IDs, content, credentials, and serial
+numbers never cross this HTTP boundary. Agent binding remains inside ChatGPT
+Desktop's Codex Micro UI.
 
 ## Local daemon
 
@@ -67,9 +123,12 @@ disabled while the core task flow continues. App Server is currently documented
 as an experimental developer interface and can change; run
 `scripts/check-codex-app-server.sh` after upgrading Codex.
 
-Arkey does not copy Codex credentials, expose App Server on a network, or claim
-to control arbitrary ChatGPT Desktop tasks. It manages threads it creates or
-threads a user explicitly imports.
+Arkey does not copy Codex credentials or expose App Server on a network. The
+current public source schema covers CLI, VS Code, App Server, and related
+internal sources without a separate Desktop source kind. A recoverable record
+from another local Codex client may be explicitly bound, but Arkey only owns
+live status notifications for turns run through its App Server connection; it
+does not claim to mirror an already-running turn in another client process.
 
 Official reference: <https://developers.openai.com/codex/app-server/>
 
@@ -131,11 +190,49 @@ joystick directions.
 The complete protocol and operational guardrails are in
 [`CODEX_MICRO_LAB.md`](CODEX_MICRO_LAB.md).
 
+### Virtual Lab boundary
+
+`apps/CodexMicroVirtualLab` is a separate macOS 15+ Swift package. It exposes
+the observed VID/PID, usage page and native report `0x06` through
+`CoreHID.HIDVirtualDevice`; it does not expose Arkey report `0x07`, persist
+settings, inspect Codex data, or start with the normal Mac/Web application.
+Both its build and visible foreground launcher require explicit
+device-identity acknowledgement. Building a runnable app also requires an
+Apple-approved HID Virtual Device managed capability in its Mac App Development
+profile; ordinary or ad-hoc signing is intentionally unsupported. The process refuses to emit Agent events
+until the Desktop sends a valid request, and the device disappears when the
+process exits.
+
+This package established the protocol-core proof point used by the separate
+ESP32-S3 bridge below. The virtual path remains independent and does not start
+with Web. Neither virtual nor physical Lab may claim hardware-verified native
+session activation or status mirroring until Desktop enumeration, handshake,
+one press/release pair, and `v.oai.thstatus` return are physically observed.
+
+### ESP32-S3 Hardware Lab boundary
+
+`firmware/esp32s3-codex-micro-lab` is the separately reviewed Web-to-HID
+implementation. The ESP32-S3 native USB peripheral exposes only report `0x06`;
+its USB-UART console is a first-party semantic control/status bridge and is not
+visible to ChatGPT Desktop. The firmware refuses input before native USB mount
+and Desktop handshake. It implements Agent 1–6, six Command keys, encoder
+press/rotation, and four joystick directions with press/release semantics.
+
+This target does not use QMK, Arkey report `0x07`, EEPROM mappings, App Server,
+or the Apple virtual-device entitlement. It is pinned to ESP-IDF 6.0.1 and
+`esp_tinyusb` 2.2.1. Its script runs `idf.py ... set-target esp32s3 build` only;
+there is no automatic install or flash path. The user's purchased board is not
+hardware-supported until its exact PCB revision, dual-port electrical design,
+boot/recovery procedure, and physical acceptance results are known. See
+[`CODEX_MICRO_ESP32S3_LAB.md`](CODEX_MICRO_ESP32S3_LAB.md).
+
 ## Data and trust boundaries
 
 - `~/.arkey/settings-v1.json`: workspace path and UI/runtime settings.
 - `~/.arkey/bindings-v1.json`: physical-control to action bindings.
 - `~/.arkey/appserver-tasks-v1.json`: task IDs, thread IDs, titles, and state metadata.
+- `~/.arkey/web-settings-v1.json`: Web control mode, Node/Codex executable paths,
+  and optional selected ESP32-S3 USB-UART path.
 - `~/.arkey/arkey.sock`: local daemon RPC/event socket.
 - QMK user EEPROM: Lab target-to-matrix mappings and checksum. This storage
   layout is experimental and may require restoring VIA settings after changing

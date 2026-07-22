@@ -11,21 +11,31 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
 
 is_release_path() {
   case "$1" in
-    .github/workflows/ci.yml|.gitignore|AGENTS.md|CONTRIBUTING.md|LICENSE|README.md|SECURITY.md|THIRD_PARTY_NOTICES.md|TRADEMARKS.md|package.json|package-lock.json|tsconfig.json) return 0 ;;
+    .github/workflows/ci.yml|.gitignore|.npmignore|AGENTS.md|CONTRIBUTING.md|LICENSE|README.md|SECURITY.md|THIRD_PARTY_NOTICES.md|TRADEMARKS.md|package.json|package-lock.json|tsconfig.json) return 0 ;;
     LICENSES/GPL-2.0-only.txt|LICENSES/MIT.txt|LICENSES/PolyForm-Noncommercial-1.0.0.txt) return 0 ;;
     assets/arkey-logo.png) return 0 ;;
     apps/ArkeyMac/Package.swift|apps/ArkeyMac/Package.resolved) return 0 ;;
     apps/ArkeyMac/Resources/Info.plist|apps/ArkeyMac/Resources/Arkey.icns|apps/ArkeyMac/Resources/Arkey.iconset/*.png) return 0 ;;
     apps/ArkeyMac/Sources/ArkeyMac/*.swift|apps/ArkeyMac/Sources/ArkeyMac/Resources/arkey.png) return 0 ;;
     apps/ArkeyMac/Tests/ArkeyMacTests/*.swift) return 0 ;;
-    docs/ARCHITECTURE.md|docs/CODEX_MICRO_LAB.md|docs/FIRMWARE.md|docs/PORTING_QMK.md) return 0 ;;
+    apps/CodexMicroVirtualLab/Package.swift|apps/CodexMicroVirtualLab/CodexMicroVirtualLab.entitlements) return 0 ;;
+    apps/CodexMicroVirtualLab/CodexMicroVirtualLab.xcodeproj/project.pbxproj) return 0 ;;
+    apps/CodexMicroVirtualLab/Sources/*/*.swift|apps/CodexMicroVirtualLab/Tests/*/*.swift) return 0 ;;
+    apps/ArkeyWeb/index.html|apps/ArkeyWeb/package.json|apps/ArkeyWeb/tsconfig.json|apps/ArkeyWeb/vite.config.ts) return 0 ;;
+    apps/ArkeyWeb/src/*.ts|apps/ArkeyWeb/src/*.tsx|apps/ArkeyWeb/src/*.css) return 0 ;;
+    docs/ARCHITECTURE.md|docs/CODEX_MICRO_LAB.md|docs/CODEX_MICRO_ESP32S3_LAB.md|docs/FIRMWARE.md|docs/PORTING_QMK.md|docs/WEB_CONSOLE.md) return 0 ;;
     firmware/UPSTREAM.md|firmware/keychron-q6-pro.patch) return 0 ;;
     firmware/codex-micro-lab-q6-pro.patch|firmware/codex-micro-lab-qmk-hid.patch|firmware/codex-micro-lab-qmk-encoder.patch) return 0 ;;
     firmware/qmk/arkey.c|firmware/qmk/arkey.h|firmware/qmk/arkey_generated.h|firmware/qmk/rgb_matrix_kb.inc) return 0 ;;
     firmware/qmk/codex_micro_lab.c|firmware/qmk/codex_micro_lab.h) return 0 ;;
+    firmware/esp32s3-codex-micro-lab/CMakeLists.txt|firmware/esp32s3-codex-micro-lab/sdkconfig.defaults|firmware/esp32s3-codex-micro-lab/dependencies.lock) return 0 ;;
+    firmware/esp32s3-codex-micro-lab/main/CMakeLists.txt|firmware/esp32s3-codex-micro-lab/main/idf_component.yml) return 0 ;;
+    firmware/esp32s3-codex-micro-lab/main/*.c|firmware/esp32s3-codex-micro-lab/main/*.h|firmware/esp32s3-codex-micro-lab/test/*.c) return 0 ;;
     profiles/effects-schema.json|profiles/effects-v1.json|profiles/keychron-q6-pro-ansi.json|profiles/schema.json) return 0 ;;
     scripts/audit-release.sh|scripts/build-macos-app.sh|scripts/build-q6-pro.sh|scripts/check-codex-app-server.sh|scripts/check-command-surface.sh|scripts/generate-firmware-contract.mjs) return 0 ;;
     scripts/build-codex-micro-lab-q6-pro.sh|scripts/codex-micro-lab-bindings.mjs|scripts/codex-micro-lab-config.mjs) return 0 ;;
+    scripts/build-codex-micro-virtual-lab.sh|scripts/run-codex-micro-virtual-lab.command) return 0 ;;
+    scripts/build-codex-micro-esp32s3-lab.sh|scripts/test-codex-micro-esp32s3-protocol.sh) return 0 ;;
     src/*.ts|test/*.test.ts) return 0 ;;
     *) return 1 ;;
   esac
@@ -33,15 +43,23 @@ is_release_path() {
 
 is_sensitive_path() {
   case "$1" in
-    README.md|AGENTS.md|CONTRIBUTING.md|LICENSE|THIRD_PARTY_NOTICES.md|package.json|package-lock.json) return 0 ;;
-    docs/ARCHITECTURE.md|docs/CODEX_MICRO_LAB.md) return 0 ;;
+    .gitignore|.npmignore|README.md|AGENTS.md|CONTRIBUTING.md|LICENSE|THIRD_PARTY_NOTICES.md|package.json|package-lock.json) return 0 ;;
+    docs/ARCHITECTURE.md|docs/CODEX_MICRO_LAB.md|docs/CODEX_MICRO_ESP32S3_LAB.md|docs/WEB_CONSOLE.md) return 0 ;;
     .github/workflows/ci.yml|scripts/audit-release.sh|scripts/build-macos-app.sh) return 0 ;;
     apps/ArkeyMac/Sources/ArkeyMac/CodexMicroLab*.swift) return 0 ;;
     apps/ArkeyMac/Sources/ArkeyMac/CommandSurfaceStore.swift|apps/ArkeyMac/Sources/ArkeyMac/ContentView.swift|apps/ArkeyMac/Sources/ArkeyMac/KeyboardStageView.swift|apps/ArkeyMac/Sources/ArkeyMac/OnboardingFlowView.swift) return 0 ;;
     apps/ArkeyMac/Tests/ArkeyMacTests/*.swift) return 0 ;;
+    apps/CodexMicroVirtualLab/Package.swift|apps/CodexMicroVirtualLab/CodexMicroVirtualLab.entitlements) return 0 ;;
+    apps/CodexMicroVirtualLab/CodexMicroVirtualLab.xcodeproj/project.pbxproj) return 0 ;;
+    apps/CodexMicroVirtualLab/Sources/*/*.swift|apps/CodexMicroVirtualLab/Tests/*/*.swift) return 0 ;;
     firmware/codex-micro-lab-*.patch|firmware/qmk/codex_micro_lab.c|firmware/qmk/codex_micro_lab.h) return 0 ;;
+    firmware/esp32s3-codex-micro-lab/*|firmware/esp32s3-codex-micro-lab/*/*) return 0 ;;
     scripts/build-codex-micro-lab-q6-pro.sh|scripts/codex-micro-lab-bindings.mjs|scripts/codex-micro-lab-config.mjs) return 0 ;;
-    test/codex-micro-lab*.test.ts) return 0 ;;
+    scripts/build-codex-micro-virtual-lab.sh|scripts/run-codex-micro-virtual-lab.command) return 0 ;;
+    scripts/build-codex-micro-esp32s3-lab.sh|scripts/test-codex-micro-esp32s3-protocol.sh) return 0 ;;
+    src/microbridge.ts|src/webserver.ts) return 0 ;;
+    apps/ArkeyWeb/src/App.tsx|apps/ArkeyWeb/src/api.ts|apps/ArkeyWeb/src/types.ts) return 0 ;;
+    test/codex-micro-lab*.test.ts|test/codex-micro-esp32s3-lab.test.ts|test/microbridge.test.ts|test/webserver.test.ts) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -67,8 +85,10 @@ required_files="
 README.md
 CONTRIBUTING.md
 LICENSE
+.npmignore
 THIRD_PARTY_NOTICES.md
 docs/CODEX_MICRO_LAB.md
+docs/CODEX_MICRO_ESP32S3_LAB.md
 apps/ArkeyMac/Sources/ArkeyMac/CodexMicroLabService.swift
 apps/ArkeyMac/Sources/ArkeyMac/CodexMicroLabConfiguratorView.swift
 firmware/codex-micro-lab-q6-pro.patch
@@ -81,6 +101,26 @@ scripts/codex-micro-lab-bindings.mjs
 scripts/codex-micro-lab-config.mjs
 test/codex-micro-lab.test.ts
 test/codex-micro-lab-bindings.test.ts
+apps/CodexMicroVirtualLab/Package.swift
+apps/CodexMicroVirtualLab/CodexMicroVirtualLab.entitlements
+apps/CodexMicroVirtualLab/CodexMicroVirtualLab.xcodeproj/project.pbxproj
+apps/CodexMicroVirtualLab/Sources/CodexMicroVirtualLabCore/CodexMicroProtocol.swift
+apps/CodexMicroVirtualLab/Sources/CodexMicroVirtualLab/main.swift
+apps/CodexMicroVirtualLab/Tests/CodexMicroVirtualLabCoreTests/CodexMicroProtocolTests.swift
+scripts/build-codex-micro-virtual-lab.sh
+scripts/run-codex-micro-virtual-lab.command
+firmware/esp32s3-codex-micro-lab/CMakeLists.txt
+firmware/esp32s3-codex-micro-lab/sdkconfig.defaults
+firmware/esp32s3-codex-micro-lab/main/CMakeLists.txt
+firmware/esp32s3-codex-micro-lab/main/idf_component.yml
+firmware/esp32s3-codex-micro-lab/main/main.c
+firmware/esp32s3-codex-micro-lab/main/micro_protocol.c
+firmware/esp32s3-codex-micro-lab/main/micro_protocol.h
+firmware/esp32s3-codex-micro-lab/test/protocol_test.c
+scripts/build-codex-micro-esp32s3-lab.sh
+scripts/test-codex-micro-esp32s3-protocol.sh
+test/codex-micro-esp32s3-lab.test.ts
+test/microbridge.test.ts
 "
 
 for path in $required_files; do
@@ -142,6 +182,30 @@ grep -q -- '--acknowledge-device-identity-test' scripts/build-codex-micro-lab-q6
   echo "Release audit failed: Lab build lacks the explicit identity-test acknowledgement." >&2
   exit 1
 }
+grep -q -- '--acknowledge-device-identity-test' scripts/build-codex-micro-virtual-lab.sh || {
+  echo "Release audit failed: Virtual Lab build lacks the explicit identity-test acknowledgement." >&2
+  exit 1
+}
+grep -q '输入 RUN' scripts/run-codex-micro-virtual-lab.command || {
+  echo "Release audit failed: Virtual Lab launcher lacks the foreground confirmation." >&2
+  exit 1
+}
+grep -q 'com.apple.developer.hid.virtual.device' apps/CodexMicroVirtualLab/CodexMicroVirtualLab.entitlements || {
+  echo "Release audit failed: Virtual Lab entitlement is missing." >&2
+  exit 1
+}
+if grep -Eq 'dfu-util[[:space:]]+-D|qmk[[:space:]]+flash' scripts/build-codex-micro-virtual-lab.sh scripts/run-codex-micro-virtual-lab.command; then
+  echo "Release audit failed: Virtual Lab must not contain a hardware write command." >&2
+  exit 1
+fi
+grep -q -- '--acknowledge-device-identity-test' scripts/build-codex-micro-esp32s3-lab.sh || {
+  echo "Release audit failed: ESP32-S3 Lab build lacks the explicit identity-test acknowledgement." >&2
+  exit 1
+}
+if grep -Eq 'idf[.]py[^\n]*(flash|erase-flash)|esptool[^\n]*(write_flash|erase_flash)|dfu-util|qmk[[:space:]]+flash' scripts/build-codex-micro-esp32s3-lab.sh scripts/test-codex-micro-esp32s3-protocol.sh; then
+  echo "Release audit failed: ESP32-S3 Lab scripts must remain compile-only." >&2
+  exit 1
+fi
 
 node <<'NODE'
 const { readFileSync } = require("node:fs");
@@ -150,11 +214,15 @@ const requiredScripts = [
   "codex-micro-lab:status",
   "codex-micro-lab:configure",
   "codex-micro-lab:sync",
+  "codex-micro-virtual-lab:test",
+  "codex-micro-esp32s3-lab:test",
+  "codex-micro-esp32s3-lab:build",
 ];
 for (const name of requiredScripts) {
   if (!pkg.scripts?.[name]) throw new Error(`package.json is missing ${name}`);
 }
 const packed = new Set(pkg.files ?? []);
+if (packed.has("firmware")) throw new Error("npm source package must not include the generated ESP-IDF tree");
 for (const path of [
   "assets/arkey-logo.png",
   "apps/ArkeyMac/Package.swift",
@@ -162,10 +230,27 @@ for (const path of [
   "apps/ArkeyMac/Resources",
   "apps/ArkeyMac/Sources",
   "apps/ArkeyMac/Tests",
+  "apps/CodexMicroVirtualLab/Package.swift",
+  "apps/CodexMicroVirtualLab/CodexMicroVirtualLab.entitlements",
+  "apps/CodexMicroVirtualLab/CodexMicroVirtualLab.xcodeproj",
+  "apps/CodexMicroVirtualLab/Sources",
+  "apps/CodexMicroVirtualLab/Tests",
   "docs/CODEX_MICRO_LAB.md",
+  "docs/CODEX_MICRO_ESP32S3_LAB.md",
+  "firmware/esp32s3-codex-micro-lab/CMakeLists.txt",
+  "firmware/esp32s3-codex-micro-lab/dependencies.lock",
+  "firmware/esp32s3-codex-micro-lab/sdkconfig.defaults",
+  "firmware/esp32s3-codex-micro-lab/main",
+  "firmware/esp32s3-codex-micro-lab/test",
   "scripts/build-codex-micro-lab-q6-pro.sh",
   "scripts/codex-micro-lab-bindings.mjs",
   "scripts/codex-micro-lab-config.mjs",
+  "scripts/build-codex-micro-virtual-lab.sh",
+  "scripts/run-codex-micro-virtual-lab.command",
+  "scripts/build-codex-micro-esp32s3-lab.sh",
+  "scripts/test-codex-micro-esp32s3-protocol.sh",
+  "test/codex-micro-esp32s3-lab.test.ts",
+  "test/microbridge.test.ts",
   "test/codex-micro-lab.test.ts",
   "test/codex-micro-lab-bindings.test.ts",
 ]) {

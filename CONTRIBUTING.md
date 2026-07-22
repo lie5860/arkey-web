@@ -18,8 +18,8 @@ endorsement by OpenAI, Work Louder, Keychron, QMK, or another vendor.
 ## Development setup
 
 ```bash
-git clone https://github.com/shuhari04/arkey.git
-cd arkey
+git clone https://github.com/lie5860/arkey-web.git
+cd arkey-web
 npm ci
 npm run check
 ./scripts/check-codex-app-server.sh
@@ -51,9 +51,10 @@ UI changes should include a release build. App Server changes should include a
 schema check against the installed Codex CLI. Firmware changes must compile in a
 clean pinned QMK tree and leave that tree clean afterward.
 
-Lab changes must additionally run the Lab Node/TypeScript tests and the acknowledged,
-build-only Q6 Pro Lab compile. Never attach the resulting binary to a pull
-request or commit it to the repository.
+Lab changes must additionally run the relevant Lab tests and acknowledged,
+build-only compile: pinned Keychron QMK for Q6 Pro or ESP-IDF 6.0.1 for the
+isolated ESP32-S3 bridge. Never attach a resulting binary to a pull request or
+commit it to the repository.
 
 ## New keyboard support
 
@@ -78,14 +79,20 @@ Binary-only firmware contributions are not accepted.
 
 - Standard Arkey firmware and new board ports must preserve the board's assigned
   USB identity and must not contain native-facing Micro compatibility behavior.
-- The only repository exception is the isolated Q6 Pro experiment under the
-  explicitly named `codex-micro-lab` files. It may contain the minimum observed
+- The only repository exceptions are the isolated Q6 Pro experiment under the
+  explicitly named `codex-micro-lab` files, the manually launched
+  `CodexMicroVirtualLab` macOS experiment, and the compile-only
+  `firmware/esp32s3-codex-micro-lab` bridge. They may contain the minimum observed
   identity and behavior needed for local interoperability testing, but must not
-  include a private SDK, copied vendor source/assets, credentials, production
-  integration, commercial instructions, or any claim of authorization.
+  include a private SDK, copied vendor source/assets, credentials, automatic
+  startup, production integration, commercial instructions, or any claim of
+  authorization.
 - Keep Arkey's Report ID `0x07` mapping protocol visibly separate from the
   native-facing report. Changes require a version, bounds checks, firmware and
   client tests, and an update to `docs/CODEX_MICRO_LAB.md`.
+- Keep the ESP32-S3 UART bridge semantic and bounded. It may accept only named
+  press/release/tap controls, must not accept raw native JSON, and must return
+  only connection state, acknowledgements, and sanitized six-slot light data.
 - The native Lab mapping is limited to six Agent slots, six Command slots and
   one Encoder target. `skill` and `cancel` are App Server-only; do not invent a
   mapping to the four joystick directions.
@@ -107,14 +114,17 @@ include all of the following:
    reports are not accepted.
 3. Tests for report framing, target bounds, ACK/error handling, preset/reset,
    App Server-only action skips, and the no-auto-flash build guard.
-4. A real compile against the pinned Keychron commit with the explicit
-   `--acknowledge-device-identity-test` flag, followed by proof that the upstream
-   QMK worktree is clean.
+4. A real compile against the pinned target toolchain with the explicit
+   `--acknowledge-device-identity-test` flag: Keychron commit for Q6 Pro or
+   ESP-IDF 6.0.1 plus `esp_tinyusb` 2.2.1 and cJSON 1.7.19~2 for ESP32-S3. QMK builds must also
+   prove the upstream worktree is clean.
 5. Updated operational documentation and an honest `compile-only` or exact
    physical-test boundary.
 
-Do not broaden the Lab identity to another keyboard merely because its firmware
-can compile. A new target requires a separate risk and recovery proposal.
+Do not broaden the QMK Lab identity to another keyboard merely because its
+firmware can compile. The ESP32-S3 bridge is a separately named target with its
+own risk/recovery document and remains compile-only until its exact PCB revision
+and physical acceptance evidence are recorded.
 
 ## Licensing contributions
 
@@ -128,6 +138,9 @@ license it under the license already assigned to its destination:
   the controlling compatible upstream license.
 - `firmware/qmk/codex_micro_lab.c` and `.h`: GPL-2.0-or-later as stated by their
   SPDX headers.
+- `firmware/esp32s3-codex-micro-lab` C sources: GPL-2.0-or-later as stated by
+  their SPDX headers; ESP-IDF and `esp_tinyusb` remain under their upstream
+  licenses.
 
 Retain upstream copyright and license notices and mark firmware modifications.
 Only submit material you have the right to contribute. The project currently

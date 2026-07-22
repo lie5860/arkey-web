@@ -2,6 +2,11 @@
 
 Codex Micro Lab 是 Arkey 中一条隔离的、非官方的本地互操作实验链路。它只面向开发、研究、兼容性验证和自有硬件测试，不是 OpenAI 或 Work Louder 发布、授权或支持的 Codex Micro 接入方式，也不属于 Codex App Server API。
 
+本文主体描述 Q6 Pro/QMK Lab。另有两个互不自动启动的隔离实现：macOS
+`CodexMicroVirtualLab`，以及 Web→USB-UART→native USB 的 ESP32-S3 Hardware
+Lab。后者不使用 QMK、矩阵 EEPROM 或 Arkey report `0x07`，其准确边界和到货
+预检单独记录在 [`CODEX_MICRO_ESP32S3_LAB.md`](CODEX_MICRO_ESP32S3_LAB.md)。
+
 > [!WARNING]
 > 实验固件会让 Keychron Q6 Pro 在 USB 枚举和 HID 行为上临时呈现当前实验所需的兼容身份。该 USB 身份并未分配给 Arkey、Keychron Q6 Pro 或使用者。不要销售或分发刷入该固件的键盘，不要将其表述为官方 Codex Micro，也不要把源码许可理解为第三方身份、商标、服务接入或商业使用授权。使用者必须自行核对适用条款和当地法律。本说明不是法律意见。
 
@@ -28,6 +33,36 @@ ChatGPT Desktop ── Report ID 0x06 ──► native-facing compatibility surf
 Arkey Mac / config CLI ── Report ID 0x07 ──► Arkey mapping protocol
                                                   └─ QMK user EEPROM
 ```
+
+### 无实体键盘 Virtual Lab
+
+`apps/CodexMicroVirtualLab` 是独立的 macOS 15+ CoreHID 实验包。它临时创建
+`303A:8360`、Usage Page `FF00` 的虚拟设备，只暴露 Report ID `0x06`，不包含
+实体 Q6 Pro 的矩阵、灯珠、EEPROM 或 Arkey Report ID `0x07`。系统会把虚拟 HID
+作为外接外设交给其他应用；创建需要
+`com.apple.developer.hid.virtual.device` entitlement，并可能要求用户确认系统权限。
+
+```bash
+swift test --package-path apps/CodexMicroVirtualLab
+ARKY_DEVELOPMENT_TEAM="<team-id>" \
+ARKY_BUNDLE_IDENTIFIER="<approved-explicit-app-id>" \
+./scripts/build-codex-micro-virtual-lab.sh \
+  --acknowledge-device-identity-test \
+  --allow-provisioning-updates
+open -a Terminal scripts/run-codex-micro-virtual-lab.command
+```
+
+`HID Virtual Device` 是受管理 capability。上述 Team 和显式 App ID 必须先获得
+Apple 审批，并由生成的 Mac App Development profile 实际携带
+`com.apple.developer.hid.virtual.device=true`。不能编辑 `.provisionprofile` 补入该键，
+也不能用 ad-hoc 或普通 Developer ID 签名绕过 AMFI。
+
+可见 Terminal 会要求输入 `RUN`，随后才创建设备。只有 Desktop 先发来合法请求，
+工具才接受 `tap/down/up 1..6`。它只打印方法名和六槽灯光摘要，不打印 Desktop
+请求正文、会话标识或凭据。`quit` 或进程退出即移除设备；构建脚本不会启动它。
+
+Apple 参考：<https://developer.apple.com/documentation/corehid/creatingvirtualdevices>
+Capability 申请：<https://developer.apple.com/help/account/capabilities/capability-requests>
 
 ### Report `0x06`：native-facing 兼容面
 
