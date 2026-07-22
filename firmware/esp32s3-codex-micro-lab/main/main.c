@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "cJSON.h"
-#include "driver/uart.h"
-#include "esp_check.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -14,36 +11,38 @@
 #include "freertos/task.h"
 #include "micro_protocol.h"
 #include "tinyusb.h"
+#include "tinyusb_cdc_acm.h"
 #include "tinyusb_default_config.h"
 #include "class/hid/hid_device.h"
 
 #define CM_USB_VID 0x303A
 #define CM_USB_PID 0x8360
 #define CM_USB_BCD_DEVICE 0x0100
-#define CM_FIRMWARE_VERSION "0.1.6-arkey-esp32s3-lab"
-#define CM_BRIDGE_UART UART_NUM_0
-#define CM_BRIDGE_UART_TX_PIN 43
-#define CM_BRIDGE_UART_RX_PIN 44
-#define CM_BRIDGE_UART_BAUD_RATE 115200
-#define CM_UART_RX_BUFFER_SIZE 2048
-#define CM_UART_TX_BUFFER_SIZE 2048
-#define CM_UART_READ_SIZE 128
-#define CM_UART_LINE_SIZE 384
+#define CM_FIRMWARE_VERSION "0.2.0-arkey-esp32s3-lab"
+#define CM_CDC_RX_CHUNK_SIZE 128
+#define CM_CDC_LINE_SIZE 384
+#define CM_CDC_RX_QUEUE_DEPTH 16
+#define CM_CDC_TX_QUEUE_DEPTH 32
 #define CM_HID_QUEUE_DEPTH 16
 #define CM_HID_JSON_SIZE 512
-#define CM_UART_TX_QUEUE_DEPTH 32
 
 typedef struct {
     char json[CM_HID_JSON_SIZE];
 } cm_hid_message_t;
 
 typedef struct {
-    char line[CM_UART_LINE_SIZE];
-} cm_uart_message_t;
+    char line[CM_CDC_LINE_SIZE];
+} cm_cdc_tx_message_t;
+
+typedef struct {
+    uint8_t bytes[CM_CDC_RX_CHUNK_SIZE];
+    size_t length;
+} cm_cdc_rx_message_t;
 
 static const char *TAG = "arkey_micro_lab";
 static QueueHandle_t hid_queue;
-static QueueHandle_t uart_tx_queue;
+static QueueHandle_t cdc_rx_queue;
+static QueueHandle_t cdc_tx_queue;
 static SemaphoreHandle_t hid_report_complete;
 static cm_json_accumulator_t host_accumulator;
 static cm_input_replay_cache_t input_replay_cache;
@@ -74,9 +73,9 @@ static const tusb_desc_device_t device_descriptor = {
     .bLength = sizeof(tusb_desc_device_t),
     .bDescriptorType = TUSB_DESC_DEVICE,
     .bcdUSB = 0x0200,
-    .bDeviceClass = 0x00,
-    .bDeviceSubClass = 0x00,
-    .bDeviceProtocol = 0x00,
+    .bDeviceClass = TUSB_CLASS_MISC,
+    .bDeviceSubClass = MISC_SUBCLASS_COMMON,
+    .bDeviceProtocol = MISC_PROTOCOL_IAD,
     .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
     .idVendor = CM_USB_VID,
     .idProduct = CM_USB_PID,
@@ -92,49 +91,65 @@ static const char *hid_string_descriptor[] = {
     "Work Louder",
     "Arkey Codex Micro Lab",
     "Codex Micro RPC",
+    "Arkey Control",
 };
 
 enum {
     ITF_NUM_HID,
+    ITF_NUM_CDC,
+    ITF_NUM_CDC_DATA,
     ITF_NUM_TOTAL,
 };
 
-#define CM_CONFIG_TOTAL_LENGTH (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN)
+#define CM_CONFIG_TOTAL_LENGTH (TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN + TUD_CDC_DESC_LEN)
 
 static const uint8_t hid_configuration_descriptor[] = {
     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, CM_CONFIG_TOTAL_LENGTH, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
     TUD_HID_INOUT_DESCRIPTOR(ITF_NUM_HID, 3, HID_ITF_PROTOCOL_NONE, sizeof(hid_report_descriptor), 0x01, 0x81, CM_REPORT_SIZE, 1),
+    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x82, 8, 0x03, 0x83, 64),
 };
 
-static bool uart_queue_object(cJSON *object, bool priority) {
-    if (object == NULL || uart_tx_queue == NULL) return false;
+static bool cdc_queue_object(cJSON *object, bool priority) {
+    if (object == NULL || cdc_tx_queue == NULL) return false;
     char *encoded = cJSON_PrintUnformatted(object);
     if (encoded == NULL) return false;
-    cm_uart_message_t message = {0};
+    cm_cdc_tx_message_t message = {0};
     const size_t length = strlen(encoded);
     bool queued = false;
     if (length < sizeof(message.line)) {
         memcpy(message.line, encoded, length + 1);
         const TickType_t wait = priority ? portMAX_DELAY : 0;
         const BaseType_t result = priority
-            ? xQueueSendToFront(uart_tx_queue, &message, wait)
-            : xQueueSendToBack(uart_tx_queue, &message, wait);
+            ? xQueueSendToFront(cdc_tx_queue, &message, wait)
+            : xQueueSendToBack(cdc_tx_queue, &message, wait);
         queued = result == pdTRUE;
     }
     cJSON_free(encoded);
     return queued;
 }
 
-static void uart_tx_task(void *context) {
+static bool cdc_write_all(const uint8_t *bytes, size_t length) {
+    if (bytes == NULL || length == 0 || !tud_cdc_connected()) return false;
+    size_t written = 0;
+    const TickType_t started = xTaskGetTickCount();
+    while (written < length) {
+        written += tinyusb_cdcacm_write_queue(TINYUSB_CDC_ACM_0, bytes + written, length - written);
+        if (written == length) break;
+        (void)tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, pdMS_TO_TICKS(20));
+        if (xTaskGetTickCount() - started >= pdMS_TO_TICKS(250) || !tud_cdc_connected()) return false;
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    return tinyusb_cdcacm_write_flush(TINYUSB_CDC_ACM_0, pdMS_TO_TICKS(250)) == ESP_OK;
+}
+
+static void cdc_tx_task(void *context) {
     (void)context;
-    cm_uart_message_t message;
+    cm_cdc_tx_message_t message;
     while (true) {
-        if (xQueueReceive(uart_tx_queue, &message, portMAX_DELAY) == pdTRUE) {
+        if (xQueueReceive(cdc_tx_queue, &message, portMAX_DELAY) == pdTRUE) {
             const size_t length = strlen(message.line);
-            if (uart_write_bytes(CM_BRIDGE_UART, message.line, length) < 0 ||
-                uart_write_bytes(CM_BRIDGE_UART, "\n", 1) < 0) {
-                ESP_LOGW(TAG, "UART response could not be queued");
-            }
+            if (!cdc_write_all((const uint8_t *)message.line, length) ||
+                !cdc_write_all((const uint8_t *)"\n", 1)) ESP_LOGW(TAG, "USB CDC response could not be sent");
         }
     }
 }
@@ -146,7 +161,7 @@ static void bridge_emit_state(void) {
     cJSON_AddStringToObject(event, "firmwareVersion", CM_FIRMWARE_VERSION);
     cJSON_AddBoolToObject(event, "usbMounted", usb_mounted);
     cJSON_AddBoolToObject(event, "desktopConnected", desktop_connected);
-    (void)uart_queue_object(event, false);
+    (void)cdc_queue_object(event, false);
     cJSON_Delete(event);
 }
 
@@ -157,7 +172,7 @@ static void bridge_emit_ack(uint32_t sequence, bool ok, const char *error_code) 
     cJSON_AddNumberToObject(event, "sequence", sequence);
     cJSON_AddBoolToObject(event, "ok", ok);
     if (error_code != NULL) cJSON_AddStringToObject(event, "error", error_code);
-    (void)uart_queue_object(event, true);
+    (void)cdc_queue_object(event, true);
     cJSON_Delete(event);
 }
 
@@ -224,7 +239,7 @@ static void bridge_emit_slot_status(const cJSON *params) {
             cJSON_AddItemToArray(slots, slot);
         }
     }
-    (void)uart_queue_object(event, false);
+    (void)cdc_queue_object(event, false);
     cJSON_Delete(event);
 }
 
@@ -232,7 +247,7 @@ static void bridge_emit_rgb_configuration(void) {
     cJSON *event = cJSON_CreateObject();
     if (event == NULL) return;
     cJSON_AddStringToObject(event, "event", "rgb_config");
-    (void)uart_queue_object(event, false);
+    (void)cdc_queue_object(event, false);
     cJSON_Delete(event);
 }
 
@@ -295,7 +310,7 @@ static void handle_host_json(const char *json, void *context) {
     cJSON_Delete(request);
 }
 
-static void handle_uart_command(const char *line) {
+static void handle_bridge_command(const char *line) {
     cJSON *request = cJSON_Parse(line);
     if (request == NULL) return;
     const cJSON *command = cJSON_GetObjectItemCaseSensitive(request, "command");
@@ -354,20 +369,20 @@ static void handle_uart_command(const char *line) {
     cJSON_Delete(request);
 }
 
-static void uart_rx_task(void *context) {
+static void cdc_rx_task(void *context) {
     (void)context;
-    uint8_t input[CM_UART_READ_SIZE];
-    char line[CM_UART_LINE_SIZE] = {0};
+    cm_cdc_rx_message_t input;
+    char line[CM_CDC_LINE_SIZE] = {0};
     size_t line_length = 0;
     bool discard_line = false;
     while (true) {
-        const int length = uart_read_bytes(CM_BRIDGE_UART, input, sizeof(input), pdMS_TO_TICKS(20));
-        for (int index = 0; index < length; index++) {
-            const char character = (char)input[index];
+        if (xQueueReceive(cdc_rx_queue, &input, portMAX_DELAY) != pdTRUE) continue;
+        for (size_t index = 0; index < input.length; index++) {
+            const char character = (char)input.bytes[index];
             if (character == '\n') {
                 if (!discard_line && line_length > 0) {
                     line[line_length] = '\0';
-                    handle_uart_command(line);
+                    handle_bridge_command(line);
                 }
                 line_length = 0;
                 discard_line = false;
@@ -384,29 +399,19 @@ static void uart_rx_task(void *context) {
     }
 }
 
-static esp_err_t bridge_uart_install(void) {
-    const uart_config_t config = {
-        .baud_rate = CM_BRIDGE_UART_BAUD_RATE,
-        .data_bits = UART_DATA_8_BITS,
-        .parity = UART_PARITY_DISABLE,
-        .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-        .source_clk = UART_SCLK_DEFAULT,
-    };
-    ESP_RETURN_ON_ERROR(uart_param_config(CM_BRIDGE_UART, &config), TAG, "UART configuration failed");
-    ESP_RETURN_ON_ERROR(
-        uart_set_pin(CM_BRIDGE_UART, CM_BRIDGE_UART_TX_PIN, CM_BRIDGE_UART_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE),
-        TAG,
-        "UART pin configuration failed"
-    );
-    return uart_driver_install(
-        CM_BRIDGE_UART,
-        CM_UART_RX_BUFFER_SIZE,
-        CM_UART_TX_BUFFER_SIZE,
-        0,
-        NULL,
-        0
-    );
+static void cdc_rx_callback(int interface, cdcacm_event_t *event) {
+    (void)event;
+    if (interface != TINYUSB_CDC_ACM_0 || cdc_rx_queue == NULL) return;
+    while (true) {
+        cm_cdc_rx_message_t message = {0};
+        if (tinyusb_cdcacm_read(
+                TINYUSB_CDC_ACM_0,
+                message.bytes,
+                sizeof(message.bytes),
+                &message.length
+            ) != ESP_OK || message.length == 0) return;
+        (void)xQueueSendToBack(cdc_rx_queue, &message, 0);
+    }
 }
 
 uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
@@ -466,19 +471,16 @@ void app_main(void) {
     cm_json_accumulator_reset(&host_accumulator);
     cm_input_replay_cache_reset(&input_replay_cache);
     hid_queue = xQueueCreate(CM_HID_QUEUE_DEPTH, sizeof(cm_hid_message_t));
-    uart_tx_queue = xQueueCreate(CM_UART_TX_QUEUE_DEPTH, sizeof(cm_uart_message_t));
+    cdc_rx_queue = xQueueCreate(CM_CDC_RX_QUEUE_DEPTH, sizeof(cm_cdc_rx_message_t));
+    cdc_tx_queue = xQueueCreate(CM_CDC_TX_QUEUE_DEPTH, sizeof(cm_cdc_tx_message_t));
     hid_report_complete = xSemaphoreCreateBinary();
-    if (hid_queue == NULL || uart_tx_queue == NULL || hid_report_complete == NULL) {
+    if (hid_queue == NULL || cdc_rx_queue == NULL || cdc_tx_queue == NULL || hid_report_complete == NULL) {
         ESP_LOGE(TAG, "Unable to allocate bridge queues");
         return;
     }
-    if (bridge_uart_install() != ESP_OK) {
-        ESP_LOGE(TAG, "Unable to install bridge UART");
-        return;
-    }
-    if (xTaskCreate(uart_tx_task, "micro_uart_tx", 4096, NULL, 9, NULL) != pdPASS ||
+    if (xTaskCreate(cdc_tx_task, "micro_cdc_tx", 4096, NULL, 9, NULL) != pdPASS ||
         xTaskCreate(hid_tx_task, "micro_hid_tx", 4096, NULL, 6, NULL) != pdPASS ||
-        xTaskCreate(uart_rx_task, "micro_uart_rx", 4096, NULL, 8, NULL) != pdPASS) {
+        xTaskCreate(cdc_rx_task, "micro_cdc_rx", 4096, NULL, 8, NULL) != pdPASS) {
         ESP_LOGE(TAG, "Unable to start bridge tasks");
         return;
     }
@@ -489,7 +491,15 @@ void app_main(void) {
     tusb_config.descriptor.string_count = sizeof(hid_string_descriptor) / sizeof(hid_string_descriptor[0]);
     tusb_config.descriptor.full_speed_config = hid_configuration_descriptor;
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_config));
+    const tinyusb_config_cdcacm_t cdc_config = {
+        .cdc_port = TINYUSB_CDC_ACM_0,
+        .callback_rx = cdc_rx_callback,
+        .callback_rx_wanted_char = NULL,
+        .callback_line_state_changed = NULL,
+        .callback_line_coding_changed = NULL,
+    };
+    ESP_ERROR_CHECK(tinyusb_cdcacm_init(&cdc_config));
     usb_mounted = tud_mounted();
     bridge_emit_state();
-    ESP_LOGI(TAG, "ESP32-S3 Codex Micro Lab bridge ready (%s, dedicated UART0 at 115200)", CM_FIRMWARE_VERSION);
+    ESP_LOGI(TAG, "ESP32-S3 Codex Micro Lab bridge ready (%s, native USB HID + CDC)", CM_FIRMWARE_VERSION);
 }

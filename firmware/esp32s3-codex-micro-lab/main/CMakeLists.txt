@@ -2,5 +2,5 @@
 idf_component_register(
   SRCS "main.c" "micro_protocol.c"
   INCLUDE_DIRS "."
-  REQUIRES esp_tinyusb espressif__cjson esp_driver_uart
+  REQUIRES esp_tinyusb espressif__cjson
 )

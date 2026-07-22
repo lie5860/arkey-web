@@ -15,27 +15,31 @@ const defaults = source("firmware/esp32s3-codex-micro-lab/sdkconfig.defaults");
 const manifest = source("firmware/esp32s3-codex-micro-lab/main/idf_component.yml");
 const builder = source("scripts/build-codex-micro-esp32s3-lab.sh");
 
-test("firmware and build metadata agree on version 0.1.6", () => {
-  assert.match(main, /CM_FIRMWARE_VERSION "0\.1\.6-arkey-esp32s3-lab"/);
-  assert.match(project, /set\(PROJECT_VER "0\.1\.6"\)/);
+test("firmware and build metadata agree on version 0.2.0", () => {
+  assert.match(main, /CM_FIRMWARE_VERSION "0\.2\.0-arkey-esp32s3-lab"/);
+  assert.match(project, /set\(PROJECT_VER "0\.2\.0"\)/);
   assert.match(main, /"firmwareVersion", CM_FIRMWARE_VERSION/);
 });
 
-test("firmware owns UART0 with buffered ESP-IDF RX and TX", () => {
-  assert.match(main, /#include "driver\/uart\.h"/);
-  assert.match(main, /uart_driver_install/);
-  assert.match(main, /uart_read_bytes/);
-  assert.match(main, /uart_write_bytes/);
-  assert.match(main, /CM_UART_RX_BUFFER_SIZE 2048/);
-  assert.match(main, /CM_UART_TX_BUFFER_SIZE 2048/);
-  assert.match(component, /esp_driver_uart/);
+test("firmware carries control and HID over one native USB connection", () => {
+  assert.match(main, /#include "tinyusb_cdc_acm\.h"/);
+  assert.match(main, /TUD_HID_INOUT_DESCRIPTOR/);
+  assert.match(main, /TUD_CDC_DESCRIPTOR/);
+  assert.match(main, /tinyusb_cdcacm_read/);
+  assert.match(main, /tinyusb_cdcacm_write_queue/);
+  assert.match(main, /\.bDeviceClass = TUSB_CLASS_MISC/);
+  assert.match(defaults, /CONFIG_TINYUSB_HID_COUNT=1/);
+  assert.match(defaults, /CONFIG_TINYUSB_CDC_ENABLED=y/);
+  assert.match(defaults, /CONFIG_TINYUSB_CDC_COUNT=1/);
+  assert.doesNotMatch(main, /#include "driver\/uart\.h"|uart_driver_install|uart_read_bytes|uart_write_bytes/);
+  assert.doesNotMatch(component, /esp_driver_uart/);
   assert.match(defaults, /CONFIG_ESP_CONSOLE_NONE=y/);
   assert.match(defaults, /CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y/);
   assert.doesNotMatch(defaults, /CONFIG_ESP_CONSOLE_UART_DEFAULT=y/);
   assert.doesNotMatch(main, /fgets\s*\(\s*stdin|printf\s*\(|fflush\s*\(\s*stdout/);
 });
 
-test("firmware exposes only the fixed Codex Micro HID and semantic controls", () => {
+test("firmware exposes the fixed Codex Micro HID plus allowlisted CDC controls", () => {
   assert.match(main, /#define CM_USB_VID 0x303A/);
   assert.match(main, /#define CM_USB_PID 0x8360/);
   assert.match(main, /TUD_HID_INOUT_DESCRIPTOR/);

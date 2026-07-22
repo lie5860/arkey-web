@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { isAllowedHost, isAllowedOrigin, isWebSettings } from "../src/webserver.js";
 
-test("Web settings contain only local UI and serial preferences", () => {
+test("Web settings contain only local UI and USB control preferences", () => {
   assert.equal(isWebSettings({ version: 1, microBridgePort: "/dev/cu.usbmodem-test", alwaysOnTop: true, focusCodexOnInput: true }), true);
   assert.equal(isWebSettings({ version: 1, microBridgePort: "", alwaysOnTop: false, focusCodexOnInput: false }), true);
   assert.equal(isWebSettings({ version: 1, microBridgePort: "/dev/test" }), false);

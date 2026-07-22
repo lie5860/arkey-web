@@ -270,7 +270,7 @@ export class MicroBridgeController {
 
   async send(control: MicroControl, phase: MicroPhase): Promise<void> {
     if (!isMicroControl(control) || !isMicroPhase(phase)) throw new Error("无效的硬件按键事件");
-    if (!this.port?.isOpen || this.connection !== "ready") throw new Error("ESP32-S3 串口桥未连接");
+    if (!this.port?.isOpen || this.connection !== "ready") throw new Error("ESP32-S3 USB 控制通道未连接");
     if (!this.usbMounted || !this.desktopConnected) throw new Error("Codex Desktop 尚未连接到开发板的原生 USB 端口");
     const sequence = this.nextSequence();
     await this.writeAndAwaitAck({ command: "input", sequence, control, phase }, sequence);
@@ -314,7 +314,7 @@ export class MicroBridgeController {
     port.on("error", (error) => this.handlePortFailure(error));
     port.on("close", () => {
       if (this.port === port) this.port = undefined;
-      this.rejectPending("ESP32-S3 串口已断开");
+      this.rejectPending("ESP32-S3 USB 控制通道已断开");
       this.connection = this.configuredPort ? "offline" : "disabled";
       this.firmwareVersion = undefined;
       this.usbMounted = false;
@@ -344,7 +344,7 @@ export class MicroBridgeController {
         port.path !== excludedPath && port.vendorId !== undefined && port.productId !== undefined
       );
     } catch (error) {
-      this.discoveryFailed(`无法枚举串口：${error instanceof Error ? error.message : String(error)}`);
+      this.discoveryFailed(`无法枚举 USB 控制端口：${error instanceof Error ? error.message : String(error)}`);
       return;
     }
 
@@ -420,7 +420,7 @@ export class MicroBridgeController {
 
   private async writeAndAwaitAck(payload: Record<string, unknown>, sequence: number): Promise<void> {
     const port = this.port;
-    if (!port?.isOpen) throw new Error("ESP32-S3 串口桥未连接");
+    if (!port?.isOpen) throw new Error("ESP32-S3 USB 控制通道未连接");
     const line = `${JSON.stringify(payload)}\n`;
     const acknowledgement = new Promise<void>((resolveAck, rejectAck) => {
       const timer = setTimeout(() => {
@@ -484,7 +484,7 @@ export class MicroBridgeController {
   private async closePort(): Promise<void> {
     const port = this.port;
     this.port = undefined;
-    this.rejectPending("ESP32-S3 串口桥已停止");
+    this.rejectPending("ESP32-S3 USB 控制通道已停止");
     if (port?.isOpen) await new Promise<void>((resolveClose) => port.close(() => resolveClose()));
   }
 }

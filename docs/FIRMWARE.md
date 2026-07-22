@@ -11,7 +11,9 @@
 - USB-UART：CH343P（板上 COM 口）
 - native USB：ESP32-S3 USB 口
 
-COM 口用于构建后的写入和 Web UART；native USB 口用于 Codex Desktop HID。两个口同时供电的长期电气安全尚未由权威原理图或测量确认。短时工作成功不等于可以长期双 VBUS 供电；优先使用确认断开 VBUS 的数据方案或完成电气核对。
+COM 口只用于构建后的手动写入和恢复；日常运行时断开 COM 口，只连接 native USB。native USB 会同时枚举 Codex Desktop 使用的 HID 接口和 Web bridge 使用的 CDC 控制接口，因此运行时只需一根线。
+
+两个口同时供电的长期电气安全尚未由权威原理图或测量确认。写入时优先断开 native USB，只连接 COM；写入完成后断开 COM，再连接 native USB。短时工作成功不等于可以长期双 VBUS 供电。
 
 ## Non-negotiable preflight
 
@@ -42,7 +44,7 @@ shasum -a 256 "$ARKEY_BACKUP_FILE"
 
 预期备份大小是 `8388608` bytes。不要把备份提交到 Git。
 
-## Build 0.1.6
+## Build 0.2.0
 
 ```bash
 npm ci
@@ -63,7 +65,7 @@ shasum -a 256 build/esp32s3-codex-micro-lab/arkey_esp32s3_codex_micro_lab.bin
 esptool.py --chip esp32s3 image-info build/esp32s3-codex-micro-lab/arkey_esp32s3_codex_micro_lab.bin
 ```
 
-`image-info` 的应用版本必须是 `0.1.6`。源码中的 USB 返回版本必须是 `0.1.6-arkey-esp32s3-lab`。如果两者不一致，停止写入。
+`image-info` 的应用版本必须是 `0.2.0`。源码中的 USB 返回版本必须是 `0.2.0-arkey-esp32s3-lab`。如果两者不一致，停止写入。
 
 ## Manual write
 
@@ -82,15 +84,15 @@ idf.py \
 
 ## Post-write acceptance
 
-1. RST 后 COM 口重新枚举。
-2. native USB 枚举为本实验设备，Codex Desktop 完成握手。
-3. Web 设置页显示 `0.1.6-arkey-esp32s3-lab`。
+1. RST 后确认写入完成，然后断开 COM 线。
+2. 只连接 native USB，确认系统同时枚举本实验 HID 和一个 CDC 控制端口。
+3. Codex Desktop 完成 HID 握手，Web 设置页显示 `0.2.0-arkey-esp32s3-lab`。
 4. 连续执行至少 50 组 Agent 按下/弹起，ACK 不应出现 2 秒超时。
 5. 六个 Agent、六个命令、旋钮和四向摇杆逐项验证。
-6. 分别断开 UART 和 native USB，确认 Web 降级为离线且进程不崩溃。
+6. 断开这一根 native USB，确认 HID 和 Web 同时降级为离线且进程不崩溃；重新连接后应恢复。
 7. 保存构建产物 SHA-256、测试次数和 Desktop 版本；不要记录会话 ID 或内容。
 
-只有这些项目实际通过后，才能把 `0.1.6` 标记为真机验证。
+复合描述符保留实验 VID/PID 和 HID report，但新增 CDC 接口、IAD device class 和两个接口号。Codex Desktop 是否仍接受该组合必须通过上述真机步骤验证；失败时用 COM 口恢复备份。只有这些项目实际通过后，才能把 `0.2.0` 标记为真机验证。
 
 ## Recovery
 

@@ -281,7 +281,7 @@ async fn hardware_ports(State(state): State<AppState>, headers: HeaderMap) -> Re
         Ok(Err(message)) => error(StatusCode::INTERNAL_SERVER_ERROR, message),
         Err(join_error) => error(
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("无法枚举串口：{join_error}"),
+            format!("无法枚举 USB 控制端口：{join_error}"),
         ),
     }
 }
@@ -313,7 +313,7 @@ async fn hardware_event(
         Ok(Err(message)) => error(StatusCode::INTERNAL_SERVER_ERROR, message),
         Err(join_error) => error(
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("串口桥任务失败：{join_error}"),
+            format!("USB 控制任务失败：{join_error}"),
         ),
     }
 }

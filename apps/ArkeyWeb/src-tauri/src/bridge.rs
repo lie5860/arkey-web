@@ -143,9 +143,9 @@ impl Bridge {
         let (commands, receiver) = mpsc::channel();
         let worker_state = Arc::clone(&state);
         let worker = thread::Builder::new()
-            .name("arkey-serial-bridge".to_owned())
+            .name("arkey-usb-control".to_owned())
             .spawn(move || Worker::new(configured_port, worker_state, receiver).run())
-            .expect("failed to start the Arkey serial bridge thread");
+            .expect("failed to start the Arkey USB control thread");
         Self {
             state,
             commands,
@@ -173,7 +173,7 @@ impl Bridge {
         }
         self.commands
             .send(Command::Configure(configured_port))
-            .map_err(|_| "串口桥已停止".to_owned())
+            .map_err(|_| "USB 控制通道已停止".to_owned())
     }
 
     pub fn send(
@@ -191,7 +191,7 @@ impl Bridge {
                 phase,
                 reply,
             })
-            .map_err(|_| "串口桥已停止".to_owned())?;
+            .map_err(|_| "USB 控制通道已停止".to_owned())?;
         Ok(receiver)
     }
 }
@@ -215,25 +215,22 @@ pub fn is_phase(value: &str) -> bool {
 
 pub fn list_ports() -> Result<Vec<PortInfo>, String> {
     let mut ports = serialport::available_ports()
-        .map_err(|error| format!("无法枚举串口：{error}"))?
+        .map_err(|error| format!("无法枚举 USB 控制端口：{error}"))?
         .into_iter()
-        .map(|port| {
-            let (manufacturer, vendor_id, product_id) = match port.port_type {
-                SerialPortType::UsbPort(usb) => (
-                    usb.manufacturer
-                        .filter(|value| !value.is_empty())
-                        .map(|value| truncate(value, 200)),
-                    Some(format!("{:04X}", usb.vid)),
-                    Some(format!("{:04X}", usb.pid)),
-                ),
-                _ => (None, None, None),
+        .filter(|port| preferred_usb_port_path(&port.port_name))
+        .filter_map(|port| {
+            let SerialPortType::UsbPort(usb) = port.port_type else {
+                return None;
             };
-            PortInfo {
+            Some(PortInfo {
                 path: port.port_name,
-                manufacturer,
-                vendor_id,
-                product_id,
-            }
+                manufacturer: usb
+                    .manufacturer
+                    .filter(|value| !value.is_empty())
+                    .map(|value| truncate(value, 200)),
+                vendor_id: Some(format!("{:04X}", usb.vid)),
+                product_id: Some(format!("{:04X}", usb.pid)),
+            })
         })
         .collect::<Vec<_>>();
     ports.sort_by(|left, right| left.path.cmp(&right.path));
@@ -363,6 +360,11 @@ impl Worker {
                 return false;
             }
         };
+        let mut port = port;
+        if let Err(error) = port.write_data_terminal_ready(true) {
+            self.fail(format!("无法启用 USB 控制设备：{error}"));
+            return false;
+        }
 
         self.port = Some(port);
         self.decoder = LineDecoder::default();
@@ -426,7 +428,7 @@ impl Worker {
         }
         let current = lock(&self.state).clone();
         if self.port.is_none() || current.connection != Connection::Ready {
-            return Err("ESP32-S3 串口桥未连接".to_owned());
+            return Err("ESP32-S3 USB 控制通道未连接".to_owned());
         }
         if !current.usb_mounted || !current.desktop_connected {
             return Err("Codex Desktop 尚未连接到开发板的原生 USB 端口".to_owned());
@@ -462,7 +464,7 @@ impl Worker {
                 let port = self
                     .port
                     .as_mut()
-                    .ok_or_else(|| "ESP32-S3 串口桥未连接".to_owned())?;
+                    .ok_or_else(|| "ESP32-S3 USB 控制通道未连接".to_owned())?;
                 port.read(&mut buffer)
             };
             match read {
@@ -489,7 +491,7 @@ impl Worker {
         let port = self
             .port
             .as_mut()
-            .ok_or_else(|| "ESP32-S3 串口桥未连接".to_owned())?;
+            .ok_or_else(|| "ESP32-S3 USB 控制通道未连接".to_owned())?;
         port.write_all(line.as_bytes())
             .and_then(|()| port.flush())
             .map_err(|error| error.to_string())
@@ -581,14 +583,23 @@ impl Worker {
 
 fn usb_port_paths(excluded: Option<&str>) -> Result<Vec<String>, String> {
     let mut paths = serialport::available_ports()
-        .map_err(|error| format!("无法枚举串口：{error}"))?
+        .map_err(|error| format!("无法枚举 USB 控制端口：{error}"))?
         .into_iter()
         .filter(|port| matches!(&port.port_type, SerialPortType::UsbPort(_)))
+        .filter(|port| preferred_usb_port_path(&port.port_name))
         .map(|port| port.port_name)
         .filter(|path| excluded != Some(path.as_str()))
         .collect::<Vec<_>>();
     paths.sort();
     Ok(paths)
+}
+
+fn preferred_usb_port_path(path: &str) -> bool {
+    #[cfg(target_os = "macos")]
+    return !path.starts_with("/dev/tty.");
+
+    #[cfg(not(target_os = "macos"))]
+    return true;
 }
 
 fn probe_arkey_port(path: &str, sequence: u32) -> bool {
@@ -598,6 +609,9 @@ fn probe_arkey_port(path: &str, sequence: u32) -> bool {
     else {
         return false;
     };
+    if port.write_data_terminal_ready(true).is_err() {
+        return false;
+    }
     let line = format!("{}\n", json!({ "command": "hello", "sequence": sequence }));
     if port
         .write_all(line.as_bytes())
@@ -838,5 +852,12 @@ mod tests {
             &json!({ "event": "ack", "sequence": 7, "ok": false }),
             7
         ));
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn discovery_prefers_macos_callout_device_over_tty_alias() {
+        assert!(preferred_usb_port_path("/dev/cu.usbmodem12102"));
+        assert!(!preferred_usb_port_path("/dev/tty.usbmodem12102"));
     }
 }

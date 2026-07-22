@@ -40,7 +40,7 @@ class FakeSerialPort extends EventEmitter implements MicroBridgeSerialPort {
         this.emitJson({ event: "ack", sequence: request.sequence, ok: true });
         this.emitJson({
           event: "bridge",
-          firmwareVersion: "0.1.6-arkey-esp32s3-lab",
+          firmwareVersion: "0.2.0-arkey-esp32s3-lab",
           usbMounted: true,
           desktopConnected: true,
         });
@@ -83,7 +83,7 @@ test("ESP32-S3 bridge control surface is a fixed semantic allowlist", () => {
   assert.equal(isMicroPhase("toggle"), false);
 });
 
-test("ESP32-S3 bridge decoder bounds unterminated serial input", () => {
+test("ESP32-S3 bridge decoder bounds unterminated USB control input", () => {
   const decoder = new MicroBridgeLineDecoder();
   assert.deepEqual(decoder.append("x".repeat(20_000)), []);
   assert.deepEqual(decoder.append("{\"event\":\"bridge\"}\n"), [{ event: "bridge" }]);
@@ -98,7 +98,7 @@ test("ESP32-S3 bridge retries a lost acknowledgement with the same sequence", as
     reconnectIntervalMs: 1_000,
   });
   await bridge.start();
-  assert.equal(bridge.state().firmwareVersion, "0.1.6-arkey-esp32s3-lab");
+  assert.equal(bridge.state().firmwareVersion, "0.2.0-arkey-esp32s3-lab");
   await bridge.send("agent-1", "down");
   await bridge.stop();
 

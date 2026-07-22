@@ -63,12 +63,12 @@ pub fn read(path: &Path) -> Settings {
 
 pub fn validate_port(port: &str) -> Result<(), String> {
     if port.chars().count() > MAX_PORT_LENGTH {
-        return Err("串口路径过长".to_owned());
+        return Err("USB 控制设备路径过长".to_owned());
     }
     if port.is_empty() || Path::new(port).is_absolute() || is_windows_com_port(port) {
         return Ok(());
     }
-    Err("串口路径必须是绝对路径".to_owned())
+    Err("USB 控制设备路径必须是绝对路径".to_owned())
 }
 
 #[cfg(windows)]

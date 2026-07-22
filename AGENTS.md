@@ -6,7 +6,7 @@ This repository intentionally contains only the ESP32-S3 Codex Micro hardware la
 
 - Do not add QMK, Keychron firmware, Codex App Server, a Swift macOS client, Virtual Lab, CI, session management, or message/composer features.
 - Do not expose Codex thread IDs, turn IDs, messages, credentials, account data, or USB serial numbers to Web.
-- The UART protocol is a fixed semantic allowlist. Never add raw USB/HID forwarding from Web.
+- The native USB CDC protocol is a fixed semantic allowlist. Never add raw USB/HID forwarding from Web.
 - Never flash, erase, or restore hardware automatically. A write requires recovery preflight and a fresh explicit confirmation immediately before the command.
 - Do not claim a build is hardware-verified.
 - Keep generated firmware, backups, diagnostic or private screenshots, logs, `node_modules`, `dist`, and `build` out of Git. Sanitized screenshots created explicitly for README documentation are allowed under `docs/assets/`.

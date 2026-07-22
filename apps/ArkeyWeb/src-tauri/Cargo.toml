@@ -1,6 +1,6 @@
 [package]
 name = "arkey-desktop"
-version = "0.1.6"
+version = "0.2.0"
 description = "Tauri desktop control surface for the Arkey ESP32-S3 hardware lab"
 edition = "2021"
 license = "PolyForm-Noncommercial-1.0.0"

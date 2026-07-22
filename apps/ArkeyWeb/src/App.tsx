@@ -349,7 +349,7 @@ export function App() {
       await api.saveSettings(settingsPort);
       await refresh();
       await closeSettings();
-      showNotice("串口设置已保存");
+      showNotice("USB 控制设置已保存");
     } catch (error) {
       showNotice(error instanceof Error ? error.message : String(error));
     } finally {
@@ -426,8 +426,8 @@ export function App() {
     return Array.from({ length: 6 }, (_, slot) => bySlot.get(slot));
   }, [snapshot?.hardware.slotLights]);
 
-  const uartReady = snapshot?.hardware.connection === "ready";
-  const connected = uartReady && snapshot?.hardware.usbMounted === true && snapshot?.hardware.desktopConnected === true;
+  const controlReady = snapshot?.hardware.connection === "ready";
+  const connected = controlReady && snapshot?.hardware.usbMounted === true && snapshot?.hardware.desktopConnected === true;
   const disabled = !connected;
   const wheelReasoning = (event: WheelEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -508,11 +508,11 @@ export function App() {
               className="deck-status has-tooltip"
               type="button"
               aria-label="连接状态与设置"
-              data-tooltip={`SETTINGS\nUART ${uartReady ? "READY" : "WAITING"} / USB ${snapshot?.hardware.usbMounted ? "ACTIVE" : "WAITING"} / CODEX ${snapshot?.hardware.desktopConnected ? "CONNECTED" : "WAITING"}`}
+              data-tooltip={`SETTINGS\nCONTROL ${controlReady ? "READY" : "WAITING"} / USB ${snapshot?.hardware.usbMounted ? "ACTIVE" : "WAITING"} / CODEX ${snapshot?.hardware.desktopConnected ? "CONNECTED" : "WAITING"}`}
               onClick={() => void openSettings()}
             >
               <span className="status-light-stack" aria-hidden="true">
-                <span className={`mini-light ${uartReady ? "active" : ""}`} />
+                <span className={`mini-light ${controlReady ? "active" : ""}`} />
                 <span className={`mini-light ${snapshot?.hardware.usbMounted ? "active blue" : ""}`} />
                 <span className={`mini-light ${snapshot?.hardware.desktopConnected ? "active yellow" : ""}`} />
               </span>
@@ -546,9 +546,9 @@ export function App() {
               <div><p>ARKEY HARDWARE</p><h1 id="settings-title">连接设置</h1></div>
               <button className="icon-button" type="button" aria-label="关闭" onClick={() => void closeSettings()}><X weight="bold" /></button>
             </div>
-            <p className="settings-copy">启动时会自动识别唯一的 Arkey USB-UART；也可以手动指定端口。另一条原生 USB 线连接 Codex Desktop。</p>
+            <p className="settings-copy">一根原生 USB 线同时负责供电、Codex HID 和 Web 控制。启动时会自动识别 Arkey 控制端口，也可以手动指定。</p>
             <label className="port-field">
-              <span>串口设备</span>
+              <span>USB 控制设备</span>
               <div className="port-row">
                 <select value={settingsPort} onChange={(event) => setSettingsPort(event.target.value)}>
                   <option value="">自动查找</option>
@@ -561,7 +561,7 @@ export function App() {
               </div>
             </label>
             <div className="hardware-checklist">
-              <div><span className={`status-dot ${uartReady ? "online" : ""}`} /><span>UART：{snapshot?.hardware.connection ?? "disabled"}</span></div>
+              <div><span className={`status-dot ${controlReady ? "online" : ""}`} /><span>控制通道：{snapshot?.hardware.connection ?? "disabled"}</span></div>
               <div><span className={`status-dot ${snapshot?.hardware.usbMounted ? "online" : ""}`} /><span>原生 USB：{snapshot?.hardware.usbMounted ? "已枚举" : "等待连接"}</span></div>
               <div><span className={`status-dot ${snapshot?.hardware.desktopConnected ? "online" : ""}`} /><span>Codex Desktop：{snapshot?.hardware.desktopConnected ? "握手完成" : "等待握手"}</span></div>
               <div><span className={`status-dot ${snapshot?.hardware.firmwareVersion ? "online" : ""}`} /><span>固件：{snapshot?.hardware.firmwareVersion ?? "尚未读取"}</span></div>

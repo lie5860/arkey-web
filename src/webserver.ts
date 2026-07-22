@@ -197,7 +197,7 @@ export async function startWebServer(options: WebServerOptions = {}): Promise<{
         const body = await readJson(request);
         const microBridgePort = typeof body.microBridgePort === "string" ? body.microBridgePort.trim() : "";
         if (microBridgePort.length > 1_024 || (microBridgePort && !isAbsolute(microBridgePort))) {
-          json(response, 400, { error: "串口路径必须是绝对路径" });
+          json(response, 400, { error: "USB 控制设备路径必须是绝对路径" });
           return;
         }
         settings = { ...settings, microBridgePort };

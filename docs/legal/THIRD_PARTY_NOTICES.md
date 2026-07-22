@@ -4,7 +4,7 @@ Arkey Web is a derivative of [shuhari04/arkey](https://github.com/shuhari04/arke
 
 > Copyright 2026 shuhari04.
 
-The original Arkey project established the Codex Micro Lab research path used here, including the current experimental native HID compatibility model, fixed control semantics, and six-slot status behavior. This fork ports that work from the upstream QMK/Keychron implementation to an ESP32-S3 firmware and adds a Web/USB-UART control path. Upstream files and derived portions remain subject to the upstream path-specific license terms and their SPDX headers; see the [upstream license](https://github.com/shuhari04/arkey/blob/main/LICENSE) and this repository's root [`LICENSE`](../../LICENSE).
+The original Arkey project established the Codex Micro Lab research path used here, including the current experimental native HID compatibility model, fixed control semantics, and six-slot status behavior. This fork ports that work from the upstream QMK/Keychron implementation to an ESP32-S3 firmware and adds a Web/native USB CDC control path. Upstream files and derived portions remain subject to the upstream path-specific license terms and their SPDX headers; see the [upstream license](https://github.com/shuhari04/arkey/blob/main/LICENSE) and this repository's root [`LICENSE`](../../LICENSE).
 
 Arkey Web also depends on these projects, which retain their own licenses:
 

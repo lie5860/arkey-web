@@ -1,6 +1,6 @@
 # Contributing
 
-Keep changes inside the narrow Web → UART → ESP32-S3 → native USB HID chain described in [ARCHITECTURE.md](ARCHITECTURE.md).
+Keep changes inside the narrow Web → native USB CDC → ESP32-S3 → native USB HID chain described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 Before submitting a change:
 
