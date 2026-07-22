@@ -25,4 +25,3 @@ Exact Node versions are in `package-lock.json`; firmware component versions are 
 The compatibility source contains names, USB identity values, report IDs, and behavior labels needed to test interoperability with the current local Codex Desktop integration. OpenAI, ChatGPT, Codex, Codex Micro, Work Louder, and Arkey marks belong to their respective owners.
 
 The repository does not include Work Louder firmware/source, a private SDK, USB captures, Codex Desktop application code, credentials, or vendor assets. No endorsement, USB identity assignment, certification, service entitlement, or commercial right is granted by these references.
-

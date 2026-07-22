@@ -12,4 +12,3 @@ Report vulnerabilities through GitHub's private “Report a vulnerability” flo
 - Repository scripts build and test firmware only; they never flash, erase, or restore a device.
 
 The native USB interoperability behavior is version-sensitive and unsupported. Treat firmware writes and changes to USB identity or HID parsing as privileged operations requiring physical recovery planning.
-

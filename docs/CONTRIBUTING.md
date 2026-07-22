@@ -16,4 +16,3 @@ npm run firmware:build
 ```
 
 Report build-only and physical results separately. Never include firmware binaries, flash backups, local device paths, Codex data, screenshots containing private content, or credentials in a commit.
-
