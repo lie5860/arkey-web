@@ -20,6 +20,12 @@ Arkey Web 是基于 [shuhari04/arkey](https://github.com/shuhari04/arkey) 继续
 > [!WARNING]
 > 本项目是非官方、仅用于自有硬件互操作研究的实验。固件会呈现当前实验观察到的 USB 身份和 HID 行为；它不是 OpenAI 或 Work Louder 支持的接口，Desktop 更新后可能失效。不要销售或把写入该固件的设备描述成官方 Codex Micro。
 
+## 演示
+
+[观看 Arkey Web 与 Codex Desktop 联动演示（MP4）](docs/assets/arkey-web-demo.mp4)
+
+视频展示了通过 Web 控制面触发实体输入后，Codex Desktop 中对应 Agent 槽位的状态联动和定时任务效果。
+
 ## 仓库范围
 
 - `firmware/esp32s3-codex-micro-lab`：ESP32-S3 固件源码、协议测试和固定依赖。
