@@ -54,6 +54,12 @@ npm run app
 
 App 默认显示 288×285 的无边框透明小键盘窗口，键盘外侧透明留白可以拖动窗口。打开连接设置时，窗口会记住当前位置并居中展开；关闭、取消或保存设置后恢复原位置和尺寸。窗口置顶开关和“退出 App”都在设置页，紧凑态不叠加系统按钮。
 
+### App 界面
+
+| 主界面 | 连接设置 |
+| --- | --- |
+| <img src="docs/assets/arkey-app-main.jpg" width="288" alt="Arkey 桌面 App 主界面"> | <img src="docs/assets/arkey-app-settings.jpg" width="480" alt="Arkey 桌面 App 连接设置界面"> |
+
 macOS 版另有“按键时置前 Codex”开关，默认关闭。开启时 Arkey 会请求系统“辅助功能”权限；授权后，每个有效控制事件都会先恢复并激活 bundle id 为 `com.openai.codex` 的 Codex Desktop，再发送原有固定硬件语义。授权尚未完成或 Codex 未运行时不会阻断按键事件。普通浏览器版不能申请或修改这项权限；从 App 打开的共享浏览器会沿用 App 中已经保存的开关状态。
 
 桌面 App 不依赖 Node 服务。Rust 会监听系统分配的随机 `127.0.0.1` 端口，提供内置 Web 资源、固定硬件 API 和唯一的串口桥。WebView 用一次性启动令牌换取 HttpOnly SameSite 会话；令牌使用后立即失效，所有静态资源和 API 都要求该会话。普通浏览器即使猜到端口也不能直接使用控制面。

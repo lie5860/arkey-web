@@ -9,7 +9,7 @@ This repository intentionally contains only the ESP32-S3 Codex Micro hardware la
 - The UART protocol is a fixed semantic allowlist. Never add raw USB/HID forwarding from Web.
 - Never flash, erase, or restore hardware automatically. A write requires recovery preflight and a fresh explicit confirmation immediately before the command.
 - Do not claim a build is hardware-verified.
-- Keep generated firmware, backups, screenshots, logs, `node_modules`, `dist`, and `build` out of Git.
+- Keep generated firmware, backups, diagnostic or private screenshots, logs, `node_modules`, `dist`, and `build` out of Git. Sanitized screenshots created explicitly for README documentation are allowed under `docs/assets/`.
 
 ## Required checks
 
