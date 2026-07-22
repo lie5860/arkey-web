@@ -30,7 +30,6 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { api, type HardwareControl } from "./api";
-import { reasoningControlForWheelEvent } from "./reasoningWheel";
 import type { MicroBridgePort, MicroSlotLight, Snapshot } from "./types";
 
 function slotColor(light: MicroSlotLight | undefined): string {
@@ -219,7 +218,6 @@ export function App() {
   const [focusCodexChanging, setFocusCodexChanging] = useState(false);
   const [exiting, setExiting] = useState(false);
   const pressedControls = useRef(new Set<HardwareControl>());
-  const lastReasoningWheelAt = useRef<number | undefined>(undefined);
   const noticeTimer = useRef<number | undefined>(undefined);
 
   const refresh = useCallback(async () => {
@@ -433,10 +431,8 @@ export function App() {
   const disabled = !connected;
   const wheelReasoning = (event: WheelEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    if (disabled) return;
-    const control = reasoningControlForWheelEvent(lastReasoningWheelAt.current, event.timeStamp, event.deltaY);
-    if (event.deltaY !== 0) lastReasoningWheelAt.current = event.timeStamp;
-    if (control) sendEvent(control, "tap");
+    if (disabled || event.deltaY === 0) return;
+    sendEvent(event.deltaY < 0 ? "encoder-cw" : "encoder-ccw", "tap");
   };
   return (
     <main className={"app-shell " + (snapshot?.web.desktop ? "desktop-shell" : "")}>
