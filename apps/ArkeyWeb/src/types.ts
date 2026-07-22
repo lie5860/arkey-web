@@ -18,6 +18,11 @@ export interface MicroSlotLight {
 export interface Snapshot {
   web: {
     serverOrigin: string;
+    desktop?: boolean;
+    alwaysOnTop?: boolean;
+    focusCodexAvailable?: boolean;
+    focusCodexOnInput?: boolean;
+    accessibilityGranted?: boolean;
   };
   hardware: {
     enabled: boolean;

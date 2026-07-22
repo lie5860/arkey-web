@@ -4,6 +4,7 @@
 node_modules/
 dist/
 build/
+target/
 coverage/
 *.bin
 *.hex
@@ -21,3 +22,4 @@ firmware/esp32s3-codex-micro-lab/managed_components/
 !.env.example
 .vscode/
 .idea/
+apps/ArkeyWeb/src-tauri/gen/

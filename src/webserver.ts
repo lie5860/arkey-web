@@ -19,6 +19,8 @@ const SESSION_COOKIE = "arkey_session";
 export interface WebSettings {
   version: 1;
   microBridgePort: string;
+  alwaysOnTop: boolean;
+  focusCodexOnInput: boolean;
 }
 
 interface WebServerOptions {
@@ -37,7 +39,9 @@ export function isWebSettings(value: unknown): value is WebSettings {
     value.version === 1 &&
     typeof value.microBridgePort === "string" &&
     value.microBridgePort.length <= 1_024 &&
-    Object.keys(value).every((key) => ["version", "microBridgePort"].includes(key));
+    typeof value.alwaysOnTop === "boolean" &&
+    typeof value.focusCodexOnInput === "boolean" &&
+    Object.keys(value).every((key) => ["version", "microBridgePort", "alwaysOnTop", "focusCodexOnInput"].includes(key));
 }
 
 function readSettings(path: string): WebSettings {
@@ -46,12 +50,17 @@ function readSettings(path: string): WebSettings {
     if (isWebSettings(parsed)) return parsed;
     // Read the port from an older App Server-era settings file without rewriting it.
     if (isObject(parsed) && parsed.version === 1 && typeof parsed.microBridgePort === "string") {
-      return { version: 1, microBridgePort: parsed.microBridgePort.slice(0, 1_024) };
+      return {
+        version: 1,
+        microBridgePort: parsed.microBridgePort.slice(0, 1_024),
+        alwaysOnTop: parsed.alwaysOnTop === true,
+        focusCodexOnInput: parsed.focusCodexOnInput === true,
+      };
     }
   } catch {
-    // Missing or invalid settings leave the bridge disabled until the user saves.
+    // Missing or invalid settings fall back to startup discovery.
   }
-  return { version: 1, microBridgePort: "" };
+  return { version: 1, microBridgePort: "", alwaysOnTop: false, focusCodexOnInput: false };
 }
 
 function writeSettings(path: string, settings: WebSettings): void {
@@ -191,10 +200,40 @@ export async function startWebServer(options: WebServerOptions = {}): Promise<{
           json(response, 400, { error: "串口路径必须是绝对路径" });
           return;
         }
-        settings = { version: 1, microBridgePort };
+        settings = { ...settings, microBridgePort };
         writeSettings(settingsPath, settings);
         await bridge.configure(microBridgePort);
         json(response, 200, { ok: true });
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/window/settings") {
+        const body = await readJson(request);
+        if (typeof body.open !== "boolean") {
+          json(response, 400, { error: "无效的窗口设置状态" });
+          return;
+        }
+        // A normal browser has no native window for the server to resize.
+        json(response, 200, { ok: true });
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/window/always-on-top") {
+        json(response, 409, { error: "浏览器版没有可置顶的应用窗口" });
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/codex/focus-on-input") {
+        json(response, 409, { error: "浏览器版不能调整 Codex 置前设置" });
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/window/start-dragging") {
+        json(response, 409, { error: "浏览器版没有可拖动的应用窗口" });
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/app/exit") {
+        json(response, 409, { error: "浏览器版没有可退出的应用窗口" });
+        return;
+      }
+      if (request.method === "POST" && url.pathname === "/api/browser/open") {
+        json(response, 409, { error: "浏览器版已经在浏览器中运行" });
         return;
       }
       if (request.method !== "GET" || url.pathname.startsWith("/api/")) {

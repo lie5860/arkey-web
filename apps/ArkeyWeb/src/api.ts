@@ -38,4 +38,19 @@ export const api = {
     method: "POST",
     body: JSON.stringify({ microBridgePort }),
   }),
+  setSettingsOpen: (open: boolean) => request<{ ok: true }>("/api/window/settings", {
+    method: "POST",
+    body: JSON.stringify({ open }),
+  }),
+  setAlwaysOnTop: (enabled: boolean) => request<{ ok: true }>("/api/window/always-on-top", {
+    method: "POST",
+    body: JSON.stringify({ enabled }),
+  }),
+  setFocusCodexOnInput: (enabled: boolean) => request<{ ok: true; accessibilityGranted: boolean }>("/api/codex/focus-on-input", {
+    method: "POST",
+    body: JSON.stringify({ enabled }),
+  }),
+  startWindowDrag: () => request<{ ok: true }>("/api/window/start-dragging", { method: "POST" }),
+  exitApp: () => request<{ ok: true }>("/api/app/exit", { method: "POST" }),
+  openBrowser: () => request<{ ok: true }>("/api/browser/open", { method: "POST" }),
 };

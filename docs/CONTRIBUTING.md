@@ -9,6 +9,8 @@ npm ci
 npm run check
 ```
 
+Desktop checks require Rust stable and the current platform's Tauri prerequisites. `npm run check` runs both the existing Node/Web tests and the Rust desktop unit tests.
+
 For firmware changes, also build with ESP-IDF 6.0.1:
 
 ```bash

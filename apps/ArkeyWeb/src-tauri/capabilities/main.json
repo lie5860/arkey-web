@@ -1,0 +1,6 @@
+{
+  "identifier": "main",
+  "description": "The localhost control surface does not receive Tauri API permissions.",
+  "windows": ["main"],
+  "permissions": []
+}

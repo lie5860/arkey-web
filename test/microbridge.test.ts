@@ -14,6 +14,10 @@ class FakeSerialPort extends EventEmitter implements MicroBridgeSerialPort {
   readonly requests: Record<string, unknown>[] = [];
   private inputAttempts = 0;
 
+  constructor(private readonly answersHello = true) {
+    super();
+  }
+
   open(callback: (error?: Error | null) => void): void {
     this.isOpen = true;
     queueMicrotask(() => callback());
@@ -31,7 +35,7 @@ class FakeSerialPort extends EventEmitter implements MicroBridgeSerialPort {
     const request = JSON.parse(data) as Record<string, unknown>;
     this.requests.push(request);
     queueMicrotask(() => callback());
-    if (request.command === "hello") {
+    if (request.command === "hello" && this.answersHello) {
       queueMicrotask(() => {
         this.emitJson({ event: "ack", sequence: request.sequence, ok: true });
         this.emitJson({
@@ -46,6 +50,10 @@ class FakeSerialPort extends EventEmitter implements MicroBridgeSerialPort {
     if (request.command === "input" && ++this.inputAttempts === 2) {
       queueMicrotask(() => this.emitJson({ event: "ack", sequence: request.sequence, ok: true }));
     }
+  }
+
+  push(value: Record<string, unknown>): void {
+    this.emitJson(value);
   }
 
   private emitJson(value: Record<string, unknown>): void {
@@ -99,4 +107,86 @@ test("ESP32-S3 bridge retries a lost acknowledgement with the same sequence", as
   assert.equal(inputs[0]?.sequence, inputs[1]?.sequence);
   assert.equal(inputs[0]?.control, "agent-1");
   assert.equal(inputs[0]?.phase, "down");
+});
+
+test("ESP32-S3 bridge merges incremental slot light updates", async () => {
+  const port = new FakeSerialPort();
+  const bridge = new MicroBridgeController("/dev/fake-esp32s3", {
+    createPort: () => port,
+    acknowledgementTimeoutMs: 100,
+    acknowledgementRetryMs: 10,
+    reconnectIntervalMs: 1_000,
+  });
+  await bridge.start();
+
+  port.push({
+    event: "slot_status",
+    slots: [
+      { slot: 0, c: 0x0000ff, b: 0.8, e: 4, s: 0.25 },
+      { slot: 1, c: 0x00ff00, b: 0.6, e: 1, s: 0.5 },
+    ],
+  });
+  port.push({ event: "slot_status", slots: [{ slot: 0, c: 0xff0000 }] });
+
+  assert.deepEqual(bridge.state().slotLights, [
+    { slot: 0, color: 0xff0000, brightness: 0.8, effect: 4, speed: 0.25 },
+    { slot: 1, color: 0x00ff00, brightness: 0.6, effect: 1, speed: 0.5 },
+  ]);
+  await bridge.stop();
+});
+
+test("ESP32-S3 bridge discovers and connects the only matching USB device", async () => {
+  const bridge = new MicroBridgeController("", {
+    createPort: (path) => new FakeSerialPort(path === "/dev/arkey"),
+    listPorts: async () => [
+      { path: "/dev/not-usb" },
+      { path: "/dev/other-usb", vendorId: "1111", productId: "2222" },
+      { path: "/dev/arkey", vendorId: "303A", productId: "1001" },
+    ],
+    acknowledgementTimeoutMs: 30,
+    acknowledgementRetryMs: 5,
+    reconnectIntervalMs: 1_000,
+  });
+
+  await bridge.start();
+  assert.equal(bridge.state().configuredPort, "/dev/arkey");
+  assert.equal(bridge.state().connection, "ready");
+  await bridge.stop();
+});
+
+test("ESP32-S3 bridge falls back to discovery when the saved path no longer works", async () => {
+  const bridge = new MicroBridgeController("/dev/old-arkey", {
+    createPort: (path) => new FakeSerialPort(path === "/dev/new-arkey"),
+    listPorts: async () => [
+      { path: "/dev/old-arkey", vendorId: "303A", productId: "1001" },
+      { path: "/dev/new-arkey", vendorId: "303A", productId: "1001" },
+    ],
+    acknowledgementTimeoutMs: 30,
+    acknowledgementRetryMs: 5,
+    reconnectIntervalMs: 1_000,
+  });
+
+  await bridge.start();
+  assert.equal(bridge.state().configuredPort, "/dev/new-arkey");
+  assert.equal(bridge.state().connection, "ready");
+  await bridge.stop();
+});
+
+test("ESP32-S3 bridge does not choose between multiple matching devices", async () => {
+  const bridge = new MicroBridgeController("", {
+    createPort: () => new FakeSerialPort(),
+    listPorts: async () => [
+      { path: "/dev/arkey-a", vendorId: "303A", productId: "1001" },
+      { path: "/dev/arkey-b", vendorId: "303A", productId: "1001" },
+    ],
+    acknowledgementTimeoutMs: 30,
+    acknowledgementRetryMs: 5,
+    reconnectIntervalMs: 1_000,
+  });
+
+  await bridge.start();
+  assert.equal(bridge.state().configuredPort, "");
+  assert.equal(bridge.state().connection, "error");
+  assert.match(bridge.state().lastError ?? "", /多个 Arkey 设备/);
+  await bridge.stop();
 });

@@ -72,6 +72,7 @@ export interface MicroBridgeSerialPort {
 
 export interface MicroBridgeControllerOptions {
   createPort?: (path: string, baudRate: number) => MicroBridgeSerialPort;
+  listPorts?: () => Promise<MicroBridgePort[]>;
   acknowledgementTimeoutMs?: number;
   acknowledgementRetryMs?: number;
   reconnectIntervalMs?: number;
@@ -108,6 +109,24 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+function mergeSlotLight(current: MicroSlotLight | undefined, update: MicroSlotLight): MicroSlotLight {
+  return {
+    slot: update.slot,
+    color: update.color ?? current?.color,
+    brightness: update.brightness ?? current?.brightness,
+    effect: update.effect ?? current?.effect,
+    speed: update.speed ?? current?.speed,
+  };
+}
+
+function mergeSlotLights(current: MicroSlotLight[], updates: MicroSlotLight[]): MicroSlotLight[] {
+  const bySlot = new Map(current.map((light) => [light.slot, light]));
+  for (const update of updates) {
+    bySlot.set(update.slot, mergeSlotLight(bySlot.get(update.slot), update));
+  }
+  return [...bySlot.values()].sort((left, right) => left.slot - right.slot);
+}
+
 function sanitizeSlotLights(value: unknown): MicroSlotLight[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const bySlot = new Map<number, MicroSlotLight>();
@@ -119,13 +138,13 @@ function sanitizeSlotLights(value: unknown): MicroSlotLight[] | undefined {
     const brightness = finiteNumber(item.b);
     const effect = finiteNumber(item.e);
     const speed = finiteNumber(item.s);
-    bySlot.set(slot, {
+    bySlot.set(slot, mergeSlotLight(bySlot.get(slot), {
       slot,
       color: color === undefined ? undefined : Math.floor(clamp(color, 0, 0xFFFFFF)),
       brightness: brightness === undefined ? undefined : clamp(brightness, 0, 1),
       effect: effect === undefined ? undefined : Math.floor(clamp(effect, 0, 255)),
       speed: speed === undefined ? undefined : clamp(speed, 0, 1),
-    });
+    }));
   }
   return [...bySlot.values()].sort((left, right) => left.slot - right.slot);
 }
@@ -184,6 +203,7 @@ export class MicroBridgeController {
   private readonly pending = new Map<number, PendingAck>();
   private decoder = new MicroBridgeLineDecoder();
   private readonly createPort: (path: string, baudRate: number) => MicroBridgeSerialPort;
+  private readonly listPorts: () => Promise<MicroBridgePort[]>;
   private readonly acknowledgementTimeoutMs: number;
   private readonly acknowledgementRetryMs: number;
   private readonly reconnectIntervalMs: number;
@@ -192,6 +212,7 @@ export class MicroBridgeController {
     this.configuredPort = configuredPort;
     this.connection = configuredPort ? "offline" : "disabled";
     this.createPort = options.createPort ?? ((path, baudRate) => new SerialPort({ path, baudRate, autoOpen: false, lock: true }) as MicroBridgeSerialPort);
+    this.listPorts = options.listPorts ?? listMicroBridgePorts;
     this.acknowledgementTimeoutMs = options.acknowledgementTimeoutMs ?? DEFAULT_ACK_TIMEOUT_MS;
     this.acknowledgementRetryMs = options.acknowledgementRetryMs ?? DEFAULT_ACK_RETRY_MS;
     this.reconnectIntervalMs = options.reconnectIntervalMs ?? DEFAULT_RECONNECT_INTERVAL_MS;
@@ -212,16 +233,24 @@ export class MicroBridgeController {
 
   async start(): Promise<void> {
     this.stopping = false;
-    if (!this.configuredPort) {
-      this.connection = "disabled";
-      return;
+    const preferredPort = this.configuredPort;
+    if (preferredPort) {
+      try {
+        await this.connect();
+      } catch {
+        await this.discover(preferredPort);
+      }
+    } else {
+      await this.discover();
     }
-    await this.connect().catch(() => undefined);
-    this.scheduleReconnect();
+    if (this.configuredPort) this.scheduleReconnect();
   }
 
   async configure(configuredPort: string): Promise<void> {
-    if (configuredPort === this.configuredPort) return;
+    if (configuredPort === this.configuredPort) {
+      if (!configuredPort && !this.stopping) await this.discover();
+      return;
+    }
     await this.closePort();
     this.configuredPort = configuredPort;
     this.connection = configuredPort ? "offline" : "disabled";
@@ -233,6 +262,9 @@ export class MicroBridgeController {
     if (configuredPort && !this.stopping) {
       await this.connect().catch(() => undefined);
       this.scheduleReconnect();
+    } else if (!this.stopping) {
+      await this.discover();
+      if (this.configuredPort) this.scheduleReconnect();
     }
   }
 
@@ -263,7 +295,7 @@ export class MicroBridgeController {
     if (!this.configuredPort || this.stopping || this.port?.isOpen) return;
     if (this.connecting) return this.connecting;
     this.connection = "connecting";
-    const attempt = this.openConfiguredPort();
+    const attempt = this.openPort(this.configuredPort);
     this.connecting = attempt;
     try {
       await attempt;
@@ -272,8 +304,8 @@ export class MicroBridgeController {
     }
   }
 
-  private async openConfiguredPort(): Promise<void> {
-    const port = this.createPort(this.configuredPort, BAUD_RATE);
+  private async openPort(path: string): Promise<void> {
+    const port = this.createPort(path, BAUD_RATE);
     this.port = port;
     this.decoder = new MicroBridgeLineDecoder();
     port.on("data", (chunk: Buffer) => {
@@ -302,6 +334,50 @@ export class MicroBridgeController {
     }
   }
 
+  private async discover(excludedPath?: string): Promise<void> {
+    this.connection = "connecting";
+    this.lastError = undefined;
+    this.clearDeviceStatus();
+    let candidates: MicroBridgePort[];
+    try {
+      candidates = (await this.listPorts()).filter((port) =>
+        port.path !== excludedPath && port.vendorId !== undefined && port.productId !== undefined
+      );
+    } catch (error) {
+      this.discoveryFailed(`无法枚举串口：${error instanceof Error ? error.message : String(error)}`);
+      return;
+    }
+
+    const matches: string[] = [];
+    for (const candidate of candidates) {
+      try {
+        await this.openPort(candidate.path);
+        matches.push(candidate.path);
+      } catch {
+        // Non-Arkey USB serial devices are ignored.
+      } finally {
+        await this.closePort();
+      }
+    }
+
+    if (matches.length === 1) {
+      this.configuredPort = matches[0]!;
+      this.connection = "offline";
+      this.lastError = undefined;
+      await this.connect().catch(() => undefined);
+      return;
+    }
+    this.discoveryFailed(matches.length === 0
+      ? "未发现可连接的 Arkey 设备"
+      : "检测到多个 Arkey 设备，请在设置中选择");
+  }
+
+  private discoveryFailed(message: string): void {
+    this.connection = "error";
+    this.lastError = message.slice(0, 400);
+    this.clearDeviceStatus();
+  }
+
   private handleMessage(message: Record<string, unknown>): void {
     if (message.event === "ack") {
       const sequence = finiteNumber(message.sequence);
@@ -323,7 +399,7 @@ export class MicroBridgeController {
     }
     if (message.event === "slot_status") {
       const slots = sanitizeSlotLights(message.slots);
-      if (slots) this.slotLights = slots;
+      if (slots) this.slotLights = mergeSlotLights(this.slotLights, slots);
     }
   }
 
@@ -386,9 +462,14 @@ export class MicroBridgeController {
   private handlePortFailure(error: unknown): void {
     this.lastError = error instanceof Error ? error.message.slice(0, 400) : String(error).slice(0, 400);
     this.connection = "error";
+    this.clearDeviceStatus();
+  }
+
+  private clearDeviceStatus(): void {
     this.firmwareVersion = undefined;
     this.usbMounted = false;
     this.desktopConnected = false;
+    this.slotLights = [];
   }
 
   private rejectPending(message: string): void {

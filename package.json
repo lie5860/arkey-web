@@ -11,12 +11,15 @@
     "build": "tsc -p tsconfig.json",
     "web:build": "npm run build --workspace @arkey/web",
     "web:check": "npm run check --workspace @arkey/web",
+    "app": "npm run desktop:dev --workspace @arkey/web",
+    "app:build": "npm run desktop:build --workspace @arkey/web",
+    "app:check": "npm run desktop:check --workspace @arkey/web",
     "web": "npm run build && npm run web:build && node dist/src/webserver.js",
     "firmware:test": "./scripts/test-codex-micro-esp32s3-protocol.sh",
     "firmware:build": "./scripts/build-codex-micro-esp32s3-lab.sh --acknowledge-device-identity-test",
     "lint": "tsc -p tsconfig.json --noEmit && npm run web:check",
     "test": "npm run build && npm run firmware:test && node --test dist/test/codex-micro-esp32s3-lab.test.js dist/test/microbridge.test.js dist/test/webserver.test.js",
-    "check": "npm run lint && npm test && npm run web:build"
+    "check": "npm run lint && npm test && npm run web:build && npm run app:check"
   },
   "engines": {
     "node": ">=20"
