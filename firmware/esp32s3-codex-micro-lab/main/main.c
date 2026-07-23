@@ -18,7 +18,7 @@
 #define CM_USB_VID 0x303A
 #define CM_USB_PID 0x8360
 #define CM_USB_BCD_DEVICE 0x0100
-#define CM_FIRMWARE_VERSION "0.2.0-arkey-esp32s3-lab"
+#define CM_FIRMWARE_VERSION "0.2.1-arkey-esp32s3-lab"
 #define CM_CDC_RX_CHUNK_SIZE 128
 #define CM_CDC_LINE_SIZE 384
 #define CM_CDC_RX_QUEUE_DEPTH 16
@@ -323,6 +323,7 @@ static void handle_bridge_command(const char *line) {
     }
     const uint32_t sequence_number = (uint32_t)sequence->valuedouble;
     if (strcmp(command->valuestring, "hello") == 0) {
+        cm_input_replay_cache_reset(&input_replay_cache);
         bridge_emit_ack(sequence_number, true, NULL);
         bridge_emit_state();
         cJSON_Delete(request);

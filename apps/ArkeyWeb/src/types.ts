@@ -20,6 +20,8 @@ export interface Snapshot {
     serverOrigin: string;
     desktop?: boolean;
     alwaysOnTop?: boolean;
+    showOnAllDesktopsAvailable?: boolean;
+    showOnAllDesktops?: boolean;
     focusCodexAvailable?: boolean;
     focusCodexOnInput?: boolean;
     accessibilityGranted?: boolean;

@@ -14,6 +14,7 @@ const MAX_PORT_LENGTH: usize = 1_024;
 pub struct Settings {
     pub micro_bridge_port: String,
     pub always_on_top: bool,
+    pub show_on_all_desktops: bool,
     pub focus_codex_on_input: bool,
 }
 
@@ -23,6 +24,7 @@ struct StoredSettings<'a> {
     version: u8,
     micro_bridge_port: &'a str,
     always_on_top: bool,
+    show_on_all_desktops: bool,
     focus_codex_on_input: bool,
 }
 
@@ -50,6 +52,10 @@ pub fn read(path: &Path) -> Settings {
         .get("alwaysOnTop")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let show_on_all_desktops = value
+        .get("showOnAllDesktops")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let focus_codex_on_input = value
         .get("focusCodexOnInput")
         .and_then(Value::as_bool)
@@ -57,6 +63,7 @@ pub fn read(path: &Path) -> Settings {
     Settings {
         micro_bridge_port,
         always_on_top,
+        show_on_all_desktops,
         focus_codex_on_input,
     }
 }
@@ -107,6 +114,7 @@ pub fn write(path: &Path, settings: &Settings) -> Result<(), String> {
         version: 1,
         micro_bridge_port: &settings.micro_bridge_port,
         always_on_top: settings.always_on_top,
+        show_on_all_desktops: settings.show_on_all_desktops,
         focus_codex_on_input: settings.focus_codex_on_input,
     })
     .map_err(|error| format!("无法编码设置：{error}"))?;
@@ -152,6 +160,7 @@ mod tests {
             Settings {
                 micro_bridge_port: "/dev/test".to_owned(),
                 always_on_top: false,
+                show_on_all_desktops: false,
                 focus_codex_on_input: false,
             }
         );
@@ -168,7 +177,21 @@ mod tests {
         )
         .unwrap();
         assert!(read(&path).always_on_top);
+        assert!(!read(&path).show_on_all_desktops);
         assert!(!read(&path).focus_codex_on_input);
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn reads_the_persisted_all_desktops_preference() {
+        let unique = format!("arkey-settings-{}-{}.json", std::process::id(), 21);
+        let path = std::env::temp_dir().join(unique);
+        fs::write(
+            &path,
+            r#"{"version":1,"microBridgePort":"/dev/test","showOnAllDesktops":true}"#,
+        )
+        .unwrap();
+        assert!(read(&path).show_on_all_desktops);
         fs::remove_file(path).unwrap();
     }
 
@@ -192,6 +215,7 @@ mod tests {
         let expected = Settings {
             micro_bridge_port: VALID_PORT.to_owned(),
             always_on_top: true,
+            show_on_all_desktops: true,
             focus_codex_on_input: true,
         };
         write(&path, &expected).unwrap();

@@ -26,6 +26,7 @@ import {
   OpenAiLogo,
   Power,
   PushPinSimple,
+  SquaresFour,
   WarningCircle,
   X,
 } from "@phosphor-icons/react";
@@ -102,36 +103,48 @@ function ViewportTooltip() {
   const [target, setTarget] = useState<TooltipTarget>();
   const [position, setPosition] = useState<TooltipPosition>({ left: 0, top: 0, ready: false });
   const tooltip = useRef<HTMLDivElement>(null);
+  const clickedTarget = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const show = (event: Event) => {
+    const showWhilePointerMoves = (event: PointerEvent) => {
       const element = tooltipTarget(event.target);
       const text = element?.dataset.tooltip;
-      if (!element || !text) return;
+      if (!element || !text || clickedTarget.current === element) return;
       setTarget((current) => current?.element === element && current.text === text
         ? current
         : { element, text });
     };
-    const hideAfterPointerExit = (event: MouseEvent) => {
+    const hideAfterPointerExit = (event: PointerEvent) => {
       const from = tooltipTarget(event.target);
       const to = tooltipTarget(event.relatedTarget);
-      if (from && from !== to) setTarget(undefined);
+      if (from && from !== to) {
+        if (clickedTarget.current === from) clickedTarget.current = null;
+        setTarget(undefined);
+      }
     };
-    const hideAfterFocusExit = (event: FocusEvent) => {
-      const from = tooltipTarget(event.target);
-      const to = tooltipTarget(event.relatedTarget);
-      if (from && from !== to) setTarget(undefined);
+    const hide = () => setTarget(undefined);
+    const hideAfterPointerDown = (event: PointerEvent) => {
+      clickedTarget.current = tooltipTarget(event.target);
+      hide();
+    };
+    const resetAndHide = () => {
+      clickedTarget.current = null;
+      hide();
     };
 
-    document.addEventListener("mouseover", show);
-    document.addEventListener("mouseout", hideAfterPointerExit);
-    document.addEventListener("focusin", show);
-    document.addEventListener("focusout", hideAfterFocusExit);
+    document.addEventListener("pointermove", showWhilePointerMoves);
+    document.addEventListener("pointerout", hideAfterPointerExit);
+    document.addEventListener("pointerdown", hideAfterPointerDown);
+    document.addEventListener("mouseleave", resetAndHide);
+    window.addEventListener("blur", resetAndHide);
+    window.addEventListener("arkey-window-blur", resetAndHide);
     return () => {
-      document.removeEventListener("mouseover", show);
-      document.removeEventListener("mouseout", hideAfterPointerExit);
-      document.removeEventListener("focusin", show);
-      document.removeEventListener("focusout", hideAfterFocusExit);
+      document.removeEventListener("pointermove", showWhilePointerMoves);
+      document.removeEventListener("pointerout", hideAfterPointerExit);
+      document.removeEventListener("pointerdown", hideAfterPointerDown);
+      document.removeEventListener("mouseleave", resetAndHide);
+      window.removeEventListener("blur", resetAndHide);
+      window.removeEventListener("arkey-window-blur", resetAndHide);
     };
   }, []);
 
@@ -208,6 +221,7 @@ export function App() {
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [connectionError, setConnectionError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  const [noticeError, setNoticeError] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsPort, setSettingsPort] = useState("");
   const [ports, setPorts] = useState<MicroBridgePort[]>([]);
@@ -215,6 +229,7 @@ export function App() {
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [browserOpening, setBrowserOpening] = useState(false);
   const [alwaysOnTopChanging, setAlwaysOnTopChanging] = useState(false);
+  const [showOnAllDesktopsChanging, setShowOnAllDesktopsChanging] = useState(false);
   const [focusCodexChanging, setFocusCodexChanging] = useState(false);
   const [exiting, setExiting] = useState(false);
   const pressedControls = useRef(new Set<HardwareControl>());
@@ -241,10 +256,14 @@ export function App() {
     return () => document.documentElement.classList.remove("desktop-mode");
   }, [snapshot?.web.desktop]);
 
-  const showNotice = useCallback((message: string) => {
+  const showNotice = useCallback((message: string, error = false) => {
     setNotice(message);
+    setNoticeError(error);
     if (noticeTimer.current) window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => setNotice(undefined), 3_200);
+    noticeTimer.current = window.setTimeout(() => {
+      setNotice(undefined);
+      setNoticeError(false);
+    }, 3_200);
   }, []);
 
   const startWindowDrag = useCallback((event: ReactMouseEvent<HTMLElement>) => {
@@ -261,7 +280,7 @@ export function App() {
 
   const sendEvent = useCallback((control: HardwareControl, phase: "down" | "up" | "tap") => {
     void api.hardwareEvent(control, phase).catch((error) => {
-      showNotice(error instanceof Error ? error.message : String(error));
+      showNotice(error instanceof Error ? error.message : String(error), true);
     });
   }, [showNotice]);
 
@@ -411,6 +430,23 @@ export function App() {
     }
   };
 
+  const toggleShowOnAllDesktops = async () => {
+    const enabled = snapshot?.web.showOnAllDesktops !== true;
+    setShowOnAllDesktopsChanging(true);
+    try {
+      await api.setShowOnAllDesktops(enabled);
+      setSnapshot((current) => current ? {
+        ...current,
+        web: { ...current.web, showOnAllDesktops: enabled },
+      } : current);
+      showNotice(enabled ? "窗口将在所有桌面显示" : "窗口仅在当前桌面显示");
+    } catch (error) {
+      showNotice(error instanceof Error ? error.message : String(error));
+    } finally {
+      setShowOnAllDesktopsChanging(false);
+    }
+  };
+
   const exitApp = async () => {
     setExiting(true);
     try {
@@ -531,8 +567,8 @@ export function App() {
       </section>
 
       {(notice || connectionError) ? (
-        <div className={`toast ${connectionError ? "error" : ""}`} role="status">
-          {connectionError ? <WarningCircle weight="fill" /> : <Check weight="bold" />}
+        <div className={`toast ${(connectionError !== undefined || noticeError) ? "error" : ""}`} role="status">
+          {(connectionError !== undefined || noticeError) ? <WarningCircle weight="fill" /> : <Check weight="bold" />}
           <span>{connectionError ?? notice}</span>
         </div>
       ) : null}
@@ -583,6 +619,25 @@ export function App() {
                   onClick={() => void toggleAlwaysOnTop()}
                 >
                   {alwaysOnTopChanging ? <CircleNotch className="spin" /> : <span />}
+                </button>
+              </div>
+            ) : null}
+            {snapshot?.web.desktop && snapshot.web.showOnAllDesktopsAvailable ? (
+              <div className="window-preference">
+                <div className="window-preference-copy">
+                  <SquaresFour weight={snapshot.web.showOnAllDesktops ? "fill" : "bold"} />
+                  <span><strong>跨桌面显示</strong><small>覆盖普通/全屏桌面；开启时隐藏 Dock 图标</small></span>
+                </div>
+                <button
+                  className={"toggle-button " + (snapshot.web.showOnAllDesktops ? "active" : "")}
+                  type="button"
+                  role="switch"
+                  aria-checked={snapshot.web.showOnAllDesktops === true}
+                  aria-label="跨桌面显示"
+                  disabled={showOnAllDesktopsChanging}
+                  onClick={() => void toggleShowOnAllDesktops()}
+                >
+                  {showOnAllDesktopsChanging ? <CircleNotch className="spin" /> : <span />}
                 </button>
               </div>
             ) : null}

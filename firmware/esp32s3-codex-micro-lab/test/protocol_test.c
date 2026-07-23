@@ -76,6 +76,9 @@ static void test_input_replay_cache(void) {
     assert(cm_input_replay_lookup(&cache, 42, CM_CONTROL_AGENT_1, CM_PHASE_DOWN) == CM_INPUT_REPLAY_DUPLICATE);
     assert(cm_input_replay_lookup(&cache, 42, CM_CONTROL_AGENT_2, CM_PHASE_DOWN) == CM_INPUT_REPLAY_CONFLICT);
 
+    cm_input_replay_cache_reset(&cache);
+    assert(cm_input_replay_lookup(&cache, 42, CM_CONTROL_AGENT_2, CM_PHASE_DOWN) == CM_INPUT_REPLAY_NEW);
+
     for (uint32_t sequence = 100; sequence < 100 + CM_INPUT_REPLAY_CAPACITY; sequence++) {
         cm_input_replay_record(&cache, sequence, CM_CONTROL_FAST, CM_PHASE_TAP);
     }

@@ -46,6 +46,10 @@ export const api = {
     method: "POST",
     body: JSON.stringify({ enabled }),
   }),
+  setShowOnAllDesktops: (enabled: boolean) => request<{ ok: true }>("/api/window/show-on-all-desktops", {
+    method: "POST",
+    body: JSON.stringify({ enabled }),
+  }),
   setFocusCodexOnInput: (enabled: boolean) => request<{ ok: true; accessibilityGranted: boolean }>("/api/codex/focus-on-input", {
     method: "POST",
     body: JSON.stringify({ enabled }),

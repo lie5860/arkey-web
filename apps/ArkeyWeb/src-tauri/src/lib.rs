@@ -6,6 +6,8 @@ mod window;
 
 use std::io;
 use std::sync::Arc;
+#[cfg(target_os = "macos")]
+use tauri::ActivationPolicy;
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 
 const COMPACT_WIDTH: f64 = 288.0;
@@ -32,16 +34,25 @@ pub fn run() {
             let saved_settings = settings::read(&settings_path);
             let configured_port = saved_settings.micro_bridge_port.clone();
             let always_on_top = saved_settings.always_on_top;
+            let show_on_all_desktops = saved_settings.show_on_all_desktops;
             let focus_codex_on_input = saved_settings.focus_codex_on_input;
             let bridge = Arc::new(bridge::Bridge::start(configured_port));
             let codex_focus = Arc::new(codex_focus::CodexFocus::new(focus_codex_on_input));
-            let settings_window = Arc::new(window::SettingsWindow::new(always_on_top));
+            let settings_window = Arc::new(window::SettingsWindow::new(
+                always_on_top,
+                show_on_all_desktops,
+            ));
+            #[cfg(target_os = "macos")]
+            if show_on_all_desktops {
+                app.handle()
+                    .set_activation_policy(ActivationPolicy::Accessory)?;
+            }
             let launch = http_server::start(
                 app.handle().clone(),
                 bridge,
                 codex_focus,
                 settings_path,
-                settings_window,
+                settings_window.clone(),
             )
             .map_err(io::Error::other)?;
             let bootstrap_url = launch
@@ -50,7 +61,11 @@ pub fn run() {
                 .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
             let allowed_origin = launch.origin;
 
-            WebviewWindowBuilder::new(app, "main", WebviewUrl::External(bootstrap_url))
+            let window_builder =
+                WebviewWindowBuilder::new(app, "main", WebviewUrl::External(bootstrap_url));
+            #[cfg(target_os = "macos")]
+            let window_builder = window_builder.visible_on_all_workspaces(show_on_all_desktops);
+            let window = window_builder
                 .title("Arkey")
                 .inner_size(COMPACT_WIDTH, COMPACT_HEIGHT)
                 .center()
@@ -70,6 +85,17 @@ pub fn run() {
                             .is_some_and(|path| path.starts_with('/'))
                 })
                 .build()?;
+            #[cfg(target_os = "macos")]
+            settings_window
+                .set_show_on_all_desktops(&window, show_on_all_desktops)
+                .map_err(io::Error::other)?;
+            let blur_window = window.clone();
+            window.on_window_event(move |event| {
+                if matches!(event, tauri::WindowEvent::Focused(false)) {
+                    let _ =
+                        blur_window.eval("window.dispatchEvent(new Event('arkey-window-blur'))");
+                }
+            });
             Ok(())
         })
         .run(tauri::generate_context!())

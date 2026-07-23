@@ -76,6 +76,10 @@ struct WebSnapshot {
     desktop: bool,
     #[serde(rename = "alwaysOnTop")]
     always_on_top: bool,
+    #[serde(rename = "showOnAllDesktopsAvailable")]
+    show_on_all_desktops_available: bool,
+    #[serde(rename = "showOnAllDesktops")]
+    show_on_all_desktops: bool,
     #[serde(rename = "focusCodexAvailable")]
     focus_codex_available: bool,
     #[serde(rename = "focusCodexOnInput")]
@@ -120,6 +124,11 @@ struct WindowBody {
 
 #[derive(Deserialize)]
 struct AlwaysOnTopBody {
+    enabled: bool,
+}
+
+#[derive(Deserialize)]
+struct ShowOnAllDesktopsBody {
     enabled: bool,
 }
 
@@ -179,6 +188,10 @@ pub fn start(
         .route("/api/settings", post(save_settings))
         .route("/api/window/settings", post(set_settings_open))
         .route("/api/window/always-on-top", post(set_window_always_on_top))
+        .route(
+            "/api/window/show-on-all-desktops",
+            post(set_window_show_on_all_desktops),
+        )
         .route("/api/codex/focus-on-input", post(set_focus_codex_on_input))
         .route("/api/window/start-dragging", post(start_window_drag))
         .route("/api/app/exit", post(exit_app))
@@ -263,6 +276,10 @@ async fn snapshot(State(state): State<AppState>, headers: HeaderMap) -> Response
                 server_origin: state.origin.clone(),
                 desktop: session == SessionKind::Desktop,
                 always_on_top: state.settings_window.always_on_top(),
+                show_on_all_desktops_available: state
+                    .settings_window
+                    .show_on_all_desktops_available(),
+                show_on_all_desktops: state.settings_window.show_on_all_desktops(),
                 focus_codex_available: state.codex_focus.available(),
                 focus_codex_on_input: state.codex_focus.enabled(),
                 accessibility_granted: state.codex_focus.accessibility_granted(),
@@ -334,6 +351,7 @@ async fn save_settings(State(state): State<AppState>, headers: HeaderMap, body: 
     let saved_settings = settings::Settings {
         micro_bridge_port: port.clone(),
         always_on_top: state.settings_window.always_on_top(),
+        show_on_all_desktops: state.settings_window.show_on_all_desktops(),
         focus_codex_on_input: state.codex_focus.enabled(),
     };
     match tokio::task::spawn_blocking(move || settings::write(&settings_path, &saved_settings))
@@ -408,6 +426,7 @@ async fn set_window_always_on_top(
     let saved_settings = settings::Settings {
         micro_bridge_port: state.bridge.configured_port(),
         always_on_top: body.enabled,
+        show_on_all_desktops: state.settings_window.show_on_all_desktops(),
         focus_codex_on_input: state.codex_focus.enabled(),
     };
     let settings_path = state.settings_path.clone();
@@ -421,6 +440,64 @@ async fn set_window_always_on_top(
         }
         Err(join_error) => {
             let _ = state.settings_window.set_always_on_top(&window, previous);
+            error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("无法保存设置：{join_error}"),
+            )
+        }
+    }
+}
+
+async fn set_window_show_on_all_desktops(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let session = match authorize(&headers, &state, true) {
+        Ok(session) => session,
+        Err(request_error) => return request_error.into_response(),
+    };
+    if session != SessionKind::Desktop {
+        return error(StatusCode::FORBIDDEN, "只有桌面客户端可以调整应用窗口");
+    }
+    if !state.settings_window.show_on_all_desktops_available() {
+        return error(StatusCode::BAD_REQUEST, "跨桌面显示仅支持 macOS");
+    }
+    let body = match parse_json::<ShowOnAllDesktopsBody>(&headers, &body) {
+        Ok(body) => body,
+        Err(request_error) => return request_error.into_response(),
+    };
+    let Some(window) = state.app.get_webview_window("main") else {
+        return error(StatusCode::INTERNAL_SERVER_ERROR, "应用窗口不存在");
+    };
+    let previous = state.settings_window.show_on_all_desktops();
+    if let Err(message) = state
+        .settings_window
+        .set_show_on_all_desktops(&window, body.enabled)
+    {
+        return error(StatusCode::INTERNAL_SERVER_ERROR, message);
+    }
+    let saved_settings = settings::Settings {
+        micro_bridge_port: state.bridge.configured_port(),
+        always_on_top: state.settings_window.always_on_top(),
+        show_on_all_desktops: body.enabled,
+        focus_codex_on_input: state.codex_focus.enabled(),
+    };
+    let settings_path = state.settings_path.clone();
+    match tokio::task::spawn_blocking(move || settings::write(&settings_path, &saved_settings))
+        .await
+    {
+        Ok(Ok(())) => json(StatusCode::OK, &OkBody { ok: true }),
+        Ok(Err(message)) => {
+            let _ = state
+                .settings_window
+                .set_show_on_all_desktops(&window, previous);
+            error(StatusCode::INTERNAL_SERVER_ERROR, message)
+        }
+        Err(join_error) => {
+            let _ = state
+                .settings_window
+                .set_show_on_all_desktops(&window, previous);
             error(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("无法保存设置：{join_error}"),
@@ -459,6 +536,7 @@ async fn set_focus_codex_on_input(
     let saved_settings = settings::Settings {
         micro_bridge_port: state.bridge.configured_port(),
         always_on_top: state.settings_window.always_on_top(),
+        show_on_all_desktops: state.settings_window.show_on_all_desktops(),
         focus_codex_on_input: body.enabled,
     };
     let settings_path = state.settings_path.clone();

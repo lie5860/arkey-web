@@ -15,9 +15,9 @@ const defaults = source("firmware/esp32s3-codex-micro-lab/sdkconfig.defaults");
 const manifest = source("firmware/esp32s3-codex-micro-lab/main/idf_component.yml");
 const builder = source("scripts/build-codex-micro-esp32s3-lab.sh");
 
-test("firmware and build metadata agree on version 0.2.0", () => {
-  assert.match(main, /CM_FIRMWARE_VERSION "0\.2\.0-arkey-esp32s3-lab"/);
-  assert.match(project, /set\(PROJECT_VER "0\.2\.0"\)/);
+test("firmware and build metadata agree on version 0.2.1", () => {
+  assert.match(main, /CM_FIRMWARE_VERSION "0\.2\.1-arkey-esp32s3-lab"/);
+  assert.match(project, /set\(PROJECT_VER "0\.2\.1"\)/);
   assert.match(main, /"firmwareVersion", CM_FIRMWARE_VERSION/);
 });
 

@@ -26,7 +26,7 @@ tokio = { version = "1", features = ["net", "rt", "sync", "time"] }
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.10"
 libc = "0.2"
-objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "libc", "NSRunningApplication"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "libc", "NSApplication", "NSRunningApplication", "NSWindow"] }
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSArray", "NSString"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
